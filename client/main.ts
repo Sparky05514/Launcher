@@ -38,7 +38,6 @@ const joinBtn = document.getElementById('joinBtn')!;
 const nicknameInput = document.getElementById('nickname') as HTMLInputElement;
 const colorInput = document.getElementById('blobColor') as HTMLInputElement;
 const ui = document.getElementById('ui')!;
-const adminPanel = document.getElementById('adminPanel')!;
 
 joinBtn.addEventListener('click', () => {
     const nickname = nicknameInput.value.trim() || 'Player';
@@ -55,55 +54,7 @@ joinBtn.addEventListener('click', () => {
 if (isServerView) {
     joinScreen.style.display = 'none';
     ui.style.display = 'block';
-    adminPanel.style.display = 'block';
     hasJoined = true;
-
-    // Admin Controls
-    const spawnBotBtn = document.getElementById('spawnBotBtn')!;
-    const spawn10Btn = document.getElementById('spawn10Btn')!;
-    const clearAllBtn = document.getElementById('clearAllBtn')!;
-    const clearTrailsBtn = document.getElementById('clearTrailsBtn')!;
-    const broadcastBtn = document.getElementById('broadcastBtn')!;
-    const broadcastInput = document.getElementById('broadcastInput') as HTMLInputElement;
-    const speedSlider = document.getElementById('speedSlider') as HTMLInputElement;
-    const speedVal = document.getElementById('speedVal')!;
-    const zoomSlider = document.getElementById('zoomSlider') as HTMLInputElement;
-    const zoomVal = document.getElementById('zoomVal')!;
-
-    spawnBotBtn.addEventListener('click', () => {
-        socket.emit(SOCKET_EVENTS.COMMAND, { type: 'chat', payload: '/spawn blob' });
-    });
-
-    spawn10Btn.addEventListener('click', () => {
-        socket.emit(SOCKET_EVENTS.COMMAND, { type: 'chat', payload: '/spawn blob 10' });
-    });
-
-    clearAllBtn.addEventListener('click', () => {
-        socket.emit(SOCKET_EVENTS.COMMAND, { type: 'chat', payload: '/clear' });
-    });
-
-    clearTrailsBtn.addEventListener('click', () => {
-        entityTrails.clear();
-    });
-
-    broadcastBtn.addEventListener('click', () => {
-        const msg = broadcastInput.value.trim();
-        if (msg) {
-            socket.emit(SOCKET_EVENTS.COMMAND, { type: 'chat', payload: `/broadcast ${msg}` });
-            broadcastInput.value = '';
-        }
-    });
-
-    speedSlider.addEventListener('input', () => {
-        const speed = parseFloat(speedSlider.value);
-        speedVal.textContent = speed.toFixed(1) + 'x';
-        socket.emit(SOCKET_EVENTS.COMMAND, { type: 'chat', payload: `/speed ${speed}` });
-    });
-
-    zoomSlider.addEventListener('input', () => {
-        serverZoom = parseFloat(zoomSlider.value);
-        zoomVal.textContent = serverZoom.toFixed(1);
-    });
 }
 
 socket.on('connect', () => {

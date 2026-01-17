@@ -65,36 +65,48 @@ io.on('connection', (socket) => {
 
             if (text.startsWith('/')) {
                 const parts = text.split(' ');
-                const command = parts[0];
+                const command = parts[0].toLowerCase();
 
                 if (command === '/spawn') {
-                    const type = parts[1];
+                    const type = parts[1] || 'blob';
                     const count = parseInt(parts[2]) || 1;
+                    console.log(`[Admin] Spawning ${count} of ${type}`);
                     for (let i = 0; i < count; i++) {
                         world.spawnEntity(type, {
                             x: Math.random() * GAME_CONFIG.WORLD_WIDTH,
                             y: Math.random() * GAME_CONFIG.WORLD_HEIGHT
                         });
                     }
+                    socket.emit(SOCKET_EVENTS.SERVER_MESSAGE, { message: `Spawned ${count} ${type}(s)` });
                 }
 
                 if (command === '/clear') {
                     const activePlayerIds = new Set(playerEntities.values());
-                    world.getState().entities;
-                    // We need a way to remove multiple entities from world
-                    // I'll add a clearAllNPCs method to world that takes a set of IDs to keep
+                    console.log(`[Admin] Clearing world. Keeping players: ${Array.from(activePlayerIds)}`);
                     world.clearExcept(activePlayerIds);
+                    socket.emit(SOCKET_EVENTS.SERVER_MESSAGE, { message: 'World cleared of NPCs' });
                 }
 
                 if (command === '/broadcast') {
                     const message = parts.slice(1).join(' ');
-                    io.emit(SOCKET_EVENTS.SERVER_MESSAGE, { message });
+                    if (message.trim()) {
+                        console.log(`[Admin] Broadcasting: ${message}`);
+                        io.emit(SOCKET_EVENTS.SERVER_MESSAGE, { message });
+                    }
+                }
+
+                if (command === '/help' && parts[1] === 'admin') {
+                    socket.emit(SOCKET_EVENTS.SERVER_MESSAGE, {
+                        message: 'Admin Commands: /spawn [type] [count], /clear, /speed [n], /broadcast [msg]'
+                    });
                 }
 
                 if (command === '/speed') {
                     const speed = parseFloat(parts[1]);
                     if (!isNaN(speed)) {
+                        console.log(`[Admin] Setting world speed to ${speed}x`);
                         world.setWorldSpeed(speed);
+                        socket.emit(SOCKET_EVENTS.SERVER_MESSAGE, { message: `World speed set to ${speed}x` });
                     }
                 }
 
