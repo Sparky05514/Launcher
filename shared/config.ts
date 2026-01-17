@@ -19,6 +19,10 @@ export const GAME_CONFIG = {
     GRID_SIZE: 50,
     BACKGROUND_COLOR: '#ffffff',
     GRID_COLOR: '#eee',
+
+    // Reconciliation (Smoothing)
+    RECONCILIATION_STRENGTH: 0.1, // How fast we pull toward server pos (0-1)
+    RECONCILIATION_THRESHOLD: 100, // Snap instantly if distance is above this
 };
 
 // Calculated Bounds - these will be updated if the config is synced

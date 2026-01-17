@@ -18,6 +18,7 @@ const keys: PlayerInput = { up: false, down: false, left: false, right: false };
 
 // Local prediction state
 let myLocalPos: { x: number, y: number } | null = null;
+let latestServerPos: { x: number, y: number } | null = null;
 
 function resize() {
     canvas.width = window.innerWidth;
@@ -56,20 +57,10 @@ socket.on('playerSpawned', (entityId: string) => {
 socket.on(SOCKET_EVENTS.WORLD_UPDATE, (state: WorldState) => {
     currentState = state;
 
-    // Reconciliation: If we have an authoritative position from the server, 
-    // we can use it to correct the local prediction if it drifts too far.
-    // For now, we'll initialize myLocalPos if it's null.
     if (myEntityId && currentState.entities[myEntityId]) {
-        const serverPos = currentState.entities[myEntityId].pos;
+        latestServerPos = currentState.entities[myEntityId].pos;
         if (!myLocalPos) {
-            myLocalPos = { ...serverPos };
-        } else {
-            // Optional: Soft reconciliation
-            // If the distance is too large, snap it.
-            const dist = Math.sqrt(Math.pow(myLocalPos.x - serverPos.x, 2) + Math.pow(myLocalPos.y - serverPos.y, 2));
-            if (dist > 50) {
-                myLocalPos = { ...serverPos };
-            }
+            myLocalPos = { ...latestServerPos };
         }
     }
 });
@@ -121,7 +112,21 @@ setInterval(() => {
         myLocalPos.y = Math.max(WORLD_BOUNDS.minY, Math.min(WORLD_BOUNDS.maxY, myLocalPos.y));
     }
 
-    // 2. Send input to server
+    // 2. Soft Reconciliation (Smoothing)
+    if (myLocalPos && latestServerPos) {
+        const dist = Math.sqrt(Math.pow(myLocalPos.x - latestServerPos.x, 2) + Math.pow(myLocalPos.y - latestServerPos.y, 2));
+
+        if (dist > GAME_CONFIG.RECONCILIATION_THRESHOLD) {
+            // Massive drift: Hard snap
+            myLocalPos = { ...latestServerPos };
+        } else if (dist > 0.1) {
+            // Nudge toward server pos
+            myLocalPos.x += (latestServerPos.x - myLocalPos.x) * GAME_CONFIG.RECONCILIATION_STRENGTH;
+            myLocalPos.y += (latestServerPos.y - myLocalPos.y) * GAME_CONFIG.RECONCILIATION_STRENGTH;
+        }
+    }
+
+    // 3. Send input to server
     socket.emit(SOCKET_EVENTS.PLAYER_INPUT, keys);
 }, 1000 / GAME_CONFIG.TICK_RATE);
 
