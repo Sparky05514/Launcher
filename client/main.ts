@@ -1,7 +1,9 @@
 import { io } from 'socket.io-client';
 import { SOCKET_EVENTS, WorldState, EntityState } from '../shared/types';
 
-const socket = io();
+// Connect to remote server if configured, otherwise default (localhost proxy)
+const serverUrl = import.meta.env.VITE_SERVER_URL;
+const socket = io(serverUrl);
 
 const canvas = document.getElementById('gameCanvas') as HTMLCanvasElement;
 const ctx = canvas.getContext('2d')!;
