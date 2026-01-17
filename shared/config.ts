@@ -5,7 +5,7 @@
 export const GAME_CONFIG = {
     // Server & Networking
     SERVER_PORT: 3000,
-    TICK_RATE: 60, // Ticks per second
+    TICK_RATE: 240, // Ticks per second
 
     // World Dimensions
     WORLD_WIDTH: 800,
