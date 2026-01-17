@@ -22,6 +22,7 @@ fi
 echo ""
 echo "Enter the Game Server URL (e.g. https://my-game.onrender.com)"
 echo "Leave empty to play locally (requires npm run server running locally)"
+echo "TIP: To host publicly with low latency, run 'npm run host' in another terminal"
 echo ""
 read -p "Server URL: " SERVER_URL
 

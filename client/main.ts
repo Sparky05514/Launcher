@@ -1,5 +1,6 @@
 import { io } from 'socket.io-client';
 import { SOCKET_EVENTS, WorldState, EntityState, PlayerInput } from '../shared/types';
+import { GAME_CONFIG, WORLD_BOUNDS } from '../shared/config';
 
 // Connect to remote server if configured, otherwise default (localhost proxy)
 const serverUrl = import.meta.env.VITE_SERVER_URL;
@@ -14,6 +15,9 @@ let hasJoined = false;
 
 // Input state
 const keys: PlayerInput = { up: false, down: false, left: false, right: false };
+
+// Local prediction state
+let myLocalPos: { x: number, y: number } | null = null;
 
 function resize() {
     canvas.width = window.innerWidth;
@@ -51,6 +55,23 @@ socket.on('playerSpawned', (entityId: string) => {
 
 socket.on(SOCKET_EVENTS.WORLD_UPDATE, (state: WorldState) => {
     currentState = state;
+
+    // Reconciliation: If we have an authoritative position from the server, 
+    // we can use it to correct the local prediction if it drifts too far.
+    // For now, we'll initialize myLocalPos if it's null.
+    if (myEntityId && currentState.entities[myEntityId]) {
+        const serverPos = currentState.entities[myEntityId].pos;
+        if (!myLocalPos) {
+            myLocalPos = { ...serverPos };
+        } else {
+            // Optional: Soft reconciliation
+            // If the distance is too large, snap it.
+            const dist = Math.sqrt(Math.pow(myLocalPos.x - serverPos.x, 2) + Math.pow(myLocalPos.y - serverPos.y, 2));
+            if (dist > 50) {
+                myLocalPos = { ...serverPos };
+            }
+        }
+    }
 });
 
 // WASD Input
@@ -75,11 +96,27 @@ window.addEventListener('keyup', (e) => {
     }
 });
 
-// Send input to server at regular intervals
+// Prediction and Input Loop
 setInterval(() => {
-    if (hasJoined && (keys.up || keys.down || keys.left || keys.right)) {
-        socket.emit(SOCKET_EVENTS.PLAYER_INPUT, keys);
+    if (!hasJoined) return;
+
+    // 1. Client-Side Prediction
+    if (myLocalPos && (keys.up || keys.down || keys.left || keys.right)) {
+        const deltaTime = 1000 / 30;
+        const moveAmt = GAME_CONFIG.PLAYER_SPEED * (deltaTime / 1000);
+
+        if (keys.up) myLocalPos.y -= moveAmt;
+        if (keys.down) myLocalPos.y += moveAmt;
+        if (keys.left) myLocalPos.x -= moveAmt;
+        if (keys.right) myLocalPos.x += moveAmt;
+
+        // Keep in bounds
+        myLocalPos.x = Math.max(WORLD_BOUNDS.minX, Math.min(WORLD_BOUNDS.maxX, myLocalPos.x));
+        myLocalPos.y = Math.max(WORLD_BOUNDS.minY, Math.min(WORLD_BOUNDS.maxY, myLocalPos.y));
     }
+
+    // 2. Send input to server
+    socket.emit(SOCKET_EVENTS.PLAYER_INPUT, keys);
 }, 1000 / 30); // 30 times per second
 
 function drawEntity(entity: EntityState) {
@@ -103,14 +140,14 @@ function drawEntity(entity: EntityState) {
 }
 
 function render() {
-    // Clear screen (White background as requested)
-    ctx.fillStyle = '#ffffff';
+    // Clear screen
+    ctx.fillStyle = GAME_CONFIG.BACKGROUND_COLOR;
     ctx.fillRect(0, 0, canvas.width, canvas.height);
 
     // Draw grid for reference
-    ctx.strokeStyle = '#eee';
+    ctx.strokeStyle = GAME_CONFIG.GRID_COLOR;
     ctx.lineWidth = 1;
-    const gridSize = 50;
+    const gridSize = GAME_CONFIG.GRID_SIZE;
     for (let x = 0; x < canvas.width; x += gridSize) {
         ctx.beginPath(); ctx.moveTo(x, 0); ctx.lineTo(x, canvas.height); ctx.stroke();
     }
@@ -120,7 +157,12 @@ function render() {
 
     if (currentState) {
         Object.values(currentState.entities).forEach(entity => {
-            drawEntity(entity);
+            // Use local position for the player's own entity
+            if (entity.id === myEntityId && myLocalPos) {
+                drawEntity({ ...entity, pos: myLocalPos });
+            } else {
+                drawEntity(entity);
+            }
         });
 
         ctx.fillStyle = 'black';

@@ -1,4 +1,5 @@
 import { EntityState, WorldState, Vector2, ContentPack, EntityDef, PlayerInput } from '../shared/types';
+import { GAME_CONFIG, WORLD_BOUNDS } from '../shared/config';
 import { v4 as uuidv4 } from 'uuid';
 import { SandboxInterpreter } from './interpreter';
 
@@ -77,9 +78,12 @@ export class WorldManager {
         const entity: EntityState = {
             id,
             type: nickname, // Use nickname as the "type" for display
-            pos: { x: Math.random() * 700 + 50, y: Math.random() * 500 + 50 },
+            pos: {
+                x: Math.random() * (GAME_CONFIG.WORLD_WIDTH - 100) + 50,
+                y: Math.random() * (GAME_CONFIG.WORLD_HEIGHT - 100) + 50
+            },
             color: color,
-            size: 20
+            size: GAME_CONFIG.PLAYER_SIZE
         };
         this.entities.set(id, entity);
         return id;
@@ -106,8 +110,7 @@ export class WorldManager {
     }
 
     public tick(deltaTime: number) {
-        const playerSpeed = 200;
-        const moveAmt = playerSpeed * (deltaTime / 1000);
+        const moveAmt = GAME_CONFIG.PLAYER_SPEED * (deltaTime / 1000);
 
         // Handle player movement
         this.playerInputs.forEach((input, entityId) => {
@@ -118,9 +121,9 @@ export class WorldManager {
                 if (input.left) entity.pos.x -= moveAmt;
                 if (input.right) entity.pos.x += moveAmt;
 
-                // Keep in bounds (simple)
-                entity.pos.x = Math.max(20, Math.min(780, entity.pos.x));
-                entity.pos.y = Math.max(20, Math.min(580, entity.pos.y));
+                // Keep in bounds using centralized bounds
+                entity.pos.x = Math.max(WORLD_BOUNDS.minX, Math.min(WORLD_BOUNDS.maxX, entity.pos.x));
+                entity.pos.y = Math.max(WORLD_BOUNDS.minY, Math.min(WORLD_BOUNDS.maxY, entity.pos.y));
             }
         });
 

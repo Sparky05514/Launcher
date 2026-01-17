@@ -1,4 +1,5 @@
 import { Action, EntityState, EntityDef } from '../shared/types';
+import { GAME_CONFIG } from '../shared/config';
 
 export class SandboxInterpreter {
 
@@ -42,9 +43,9 @@ export class SandboxInterpreter {
         entity.pos.y += dir.y * moveAmt;
 
         // Wrap around world
-        if (entity.pos.x > 800) entity.pos.x = 0;
-        if (entity.pos.x < 0) entity.pos.x = 800;
-        if (entity.pos.y > 600) entity.pos.y = 0;
-        if (entity.pos.y < 0) entity.pos.y = 600;
+        if (entity.pos.x > GAME_CONFIG.WORLD_WIDTH) entity.pos.x = 0;
+        if (entity.pos.x < 0) entity.pos.x = GAME_CONFIG.WORLD_WIDTH;
+        if (entity.pos.y > GAME_CONFIG.WORLD_HEIGHT) entity.pos.y = 0;
+        if (entity.pos.y < 0) entity.pos.y = GAME_CONFIG.WORLD_HEIGHT;
     }
 }

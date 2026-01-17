@@ -10,7 +10,8 @@
     "build:server": "tsc -p server/tsconfig.json",
     "build:client": "vite build client",
     "build": "npm run build:server && npm run build:client",
-    "start": "node dist/server/server/index.js"
+    "start": "node dist/server/server/index.js",
+    "host": "concurrently -n server,tunnel \"npm run server\" \"npx localtunnel --port 3000\""
   },
   "keywords": [],
   "author": "",
@@ -33,6 +34,7 @@
     "@types/uuid": "^10.0.0",
     "concurrently": "^9.2.1",
     "nodemon": "^3.1.11",
-    "vite": "^7.3.1"
+    "vite": "^7.3.1",
+    "localtunnel": "^2.0.2"
   }
 }

@@ -3,6 +3,7 @@ import { createServer } from 'http';
 import { Server } from 'socket.io';
 import { SOCKET_EVENTS, PlayerJoinData, PlayerInput } from '../shared/types';
 import { WorldManager } from './world';
+import { GAME_CONFIG } from '../shared/config';
 
 import path from 'path';
 
@@ -63,8 +64,11 @@ io.on('connection', (socket) => {
 
             if (text.startsWith('/spawn ')) {
                 const type = text.split(' ')[1];
-                // Spawn at random location
-                world.spawnEntity(type, { x: Math.random() * 800, y: Math.random() * 600 });
+                // Spawn at random location within world bounds
+                world.spawnEntity(type, {
+                    x: Math.random() * GAME_CONFIG.WORLD_WIDTH,
+                    y: Math.random() * GAME_CONFIG.WORLD_HEIGHT
+                });
             }
 
             if (text.startsWith('/upload ')) {
@@ -82,16 +86,15 @@ io.on('connection', (socket) => {
     });
 });
 
-// Game Loop (30 TPS)
-const TICK_RATE = 30;
-const TICK_MS = 1000 / TICK_RATE;
+// Game Loop (defined by TICK_RATE)
+const TICK_MS = 1000 / GAME_CONFIG.TICK_RATE;
 
 setInterval(() => {
     world.tick(TICK_MS);
     io.emit(SOCKET_EVENTS.WORLD_UPDATE, world.getState());
 }, TICK_MS);
 
-const PORT = 3000;
+const PORT = process.env.PORT || GAME_CONFIG.SERVER_PORT;
 httpServer.listen(PORT, () => {
     console.log(`Server running on http://localhost:${PORT}`);
 });

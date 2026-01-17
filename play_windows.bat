@@ -24,6 +24,7 @@ IF NOT EXIST "node_modules" (
 ECHO.
 ECHO Enter the Game Server URL (e.g. https://my-game.onrender.com)
 ECHO Leave empty to play locally (requires npm run server running locally)
+ECHO TIP: To host publicly with low latency, run 'npm run host' in another terminal
 ECHO.
 SET /P SERVER_URL="Server URL: "
 

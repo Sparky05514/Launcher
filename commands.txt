@@ -1,0 +1,11 @@
+# Game Commands
+
+## 1. /spawn
+**What it does:** Creates a new NPC entity.
+**Options:** `blob` (moves randomly), `runner` (moves in a line).
+**Example:** `/spawn blob`
+
+## 2. /upload
+**What it does:** Loads a custom entity via JSON.
+**Options:** Requires "definitions" with color, radius, and behavior.
+**Example:** `/upload {"definitions": {"fast": {"type": "fast", "color": "blue", "radius": 10, "behavior": {"onTick": [{"opcode": "random_walk", "params": {"speed": 200}}]}}}}`
