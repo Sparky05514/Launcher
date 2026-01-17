@@ -51,10 +51,10 @@ io.on('connection', (socket) => {
         socket.emit('playerSpawned', entityId);
     });
 
-    socket.on(SOCKET_EVENTS.PLAYER_INPUT, (input: PlayerInput) => {
+    socket.on(SOCKET_EVENTS.PLAYER_POSITION, (pos: { x: number, y: number }) => {
         const entityId = playerEntities.get(socket.id);
         if (entityId) {
-            world.setPlayerInput(entityId, input);
+            world.setPlayerPosition(entityId, pos);
         }
     });
 

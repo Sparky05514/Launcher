@@ -89,8 +89,11 @@ export class WorldManager {
         return id;
     }
 
-    public setPlayerInput(entityId: string, input: PlayerInput) {
-        this.playerInputs.set(entityId, input);
+    public setPlayerPosition(entityId: string, pos: Vector2) {
+        const entity = this.entities.get(entityId);
+        if (entity) {
+            entity.pos = { ...pos };
+        }
     }
 
     public removeEntity(id: string) {
@@ -110,22 +113,8 @@ export class WorldManager {
     }
 
     public tick(deltaTime: number) {
-        const moveAmt = GAME_CONFIG.PLAYER_SPEED * (deltaTime / 1000);
-
-        // Handle player movement
-        this.playerInputs.forEach((input, entityId) => {
-            const entity = this.entities.get(entityId);
-            if (entity) {
-                if (input.up) entity.pos.y -= moveAmt;
-                if (input.down) entity.pos.y += moveAmt;
-                if (input.left) entity.pos.x -= moveAmt;
-                if (input.right) entity.pos.x += moveAmt;
-
-                // Keep in bounds using centralized bounds
-                entity.pos.x = Math.max(WORLD_BOUNDS.minX, Math.min(WORLD_BOUNDS.maxX, entity.pos.x));
-                entity.pos.y = Math.max(WORLD_BOUNDS.minY, Math.min(WORLD_BOUNDS.maxY, entity.pos.y));
-            }
-        });
+        // Player movement is now Client-Authoritative.
+        // The server no longer processes inputs here.
 
         // Handle NPC behaviors
         this.entities.forEach(entity => {
