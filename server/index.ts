@@ -4,6 +4,8 @@ import { Server } from 'socket.io';
 import { SOCKET_EVENTS } from '../shared/types';
 import { WorldManager } from './world';
 
+import path from 'path';
+
 const app = express();
 const httpServer = createServer(app);
 const io = new Server(httpServer, {
@@ -14,6 +16,11 @@ const io = new Server(httpServer, {
 });
 
 const world = new WorldManager();
+
+// Serve static files (Client Build)
+const clientDist = path.join(__dirname, '../../client/dist');
+app.use(express.static(clientDist));
+
 
 io.on('connection', (socket) => {
     console.log('Client connected:', socket.id);
