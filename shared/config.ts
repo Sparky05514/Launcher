@@ -10,6 +10,7 @@ export const GAME_CONFIG = {
     // World Dimensions
     WORLD_WIDTH: 800,
     WORLD_HEIGHT: 600,
+    SERVER_VIEW_SCALE: 0.5, // 50% scale for the control panel
 
     // Player Settings
     PLAYER_SPEED: 400,

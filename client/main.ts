@@ -16,6 +16,10 @@ let hasJoined = false;
 // Input state
 const keys: PlayerInput = { up: false, down: false, left: false, right: false };
 
+// Admin / Server View Detection
+const urlParams = new URLSearchParams(window.location.search);
+const isServerView = urlParams.get('admin') === 'true';
+
 let myLocalPos: { x: number, y: number } | null = null;
 const entityTrails: Map<string, { x: number, y: number, timestamp: number }[]> = new Map();
 
@@ -43,6 +47,13 @@ joinBtn.addEventListener('click', () => {
     ui.style.display = 'block';
     hasJoined = true;
 });
+
+// Auto-join if in server view
+if (isServerView) {
+    joinScreen.style.display = 'none';
+    ui.style.display = 'block';
+    hasJoined = true;
+}
 
 socket.on('connect', () => {
     console.log('Connected to server with ID:', socket.id);
@@ -197,6 +208,13 @@ function drawEntity(entity: EntityState) {
 }
 
 function render() {
+    ctx.save();
+
+    // Apply server view scaling
+    if (isServerView) {
+        ctx.scale(GAME_CONFIG.SERVER_VIEW_SCALE, GAME_CONFIG.SERVER_VIEW_SCALE);
+    }
+
     // 1. Draw Void (everything outside the game world)
     ctx.fillStyle = GAME_CONFIG.VOID_COLOR;
     ctx.fillRect(0, 0, canvas.width, canvas.height);
@@ -284,7 +302,7 @@ function render() {
         ctx.fillStyle = 'black';
         ctx.fillText('Connecting...', 10, 20);
     }
-
+    ctx.restore();
     requestAnimationFrame(render);
 }
 render();
