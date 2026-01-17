@@ -22,7 +22,7 @@ export const GAME_CONFIG = {
 
     // Juice Settings
     TRAIL_ENABLED: true,
-    TRAIL_LENGTH: 10,
+    TRAIL_DURATION_MS: 300,
     CHAT_DURATION_SEC: 5,
 };
 

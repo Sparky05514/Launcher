@@ -17,7 +17,7 @@ let hasJoined = false;
 const keys: PlayerInput = { up: false, down: false, left: false, right: false };
 
 let myLocalPos: { x: number, y: number } | null = null;
-const entityTrails: Map<string, { x: number, y: number }[]> = new Map();
+const entityTrails: Map<string, { x: number, y: number, timestamp: number }[]> = new Map();
 
 function resize() {
     canvas.width = window.innerWidth;
@@ -200,26 +200,34 @@ function render() {
             // 1. Trail Logic
             if (GAME_CONFIG.TRAIL_ENABLED) {
                 let trail = entityTrails.get(entity.id) || [];
-                // Only add point if it moved significantly
-                const lastPoint = trail[trail.length - 1];
-                if (!lastPoint || Math.abs(lastPoint.x - pos.x) > 1 || Math.abs(lastPoint.y - pos.y) > 1) {
-                    trail.push({ ...pos });
-                }
-                if (trail.length > GAME_CONFIG.TRAIL_LENGTH) trail.shift();
+                const now = Date.now();
+
+                // Add current position to trail (every frame for maximum smoothness)
+                trail.push({ x: pos.x, y: pos.y, timestamp: now });
+
+                // Filter out points older than the duration
+                trail = trail.filter(p => now - p.timestamp < GAME_CONFIG.TRAIL_DURATION_MS);
+
+                // Performance cap
+                if (trail.length > 60) trail.shift();
                 entityTrails.set(entity.id, trail);
 
-                // Draw Trail
-                ctx.beginPath();
-                ctx.strokeStyle = entity.color || 'black';
-                ctx.lineCap = 'round';
-                ctx.lineJoin = 'round';
-                trail.forEach((p, i) => {
-                    ctx.globalAlpha = i / trail.length; // Fade trail
-                    ctx.lineWidth = (entity.size || 10) * (i / trail.length) * 0.8;
-                    if (i === 0) ctx.moveTo(p.x, p.y);
-                    else ctx.lineTo(p.x, p.y);
-                });
-                ctx.stroke();
+                // Draw Ghosting Trail (Shadow Echo)
+                // We draw a fixed number of ghosts sampled from our high-res points for smoothness
+                const ghostCount = 6;
+                for (let i = 0; i < ghostCount; i++) {
+                    const index = Math.floor((i / ghostCount) * trail.length);
+                    const p = trail[index];
+                    if (!p) continue;
+
+                    const alpha = (i / ghostCount) * 0.4; // Max 0.4 opacity
+                    ctx.globalAlpha = alpha;
+                    ctx.fillStyle = entity.color || 'black';
+
+                    ctx.beginPath();
+                    ctx.arc(p.x, p.y, (entity.size || 10), 0, Math.PI * 2);
+                    ctx.fill();
+                }
                 ctx.globalAlpha = 1.0;
             }
 
