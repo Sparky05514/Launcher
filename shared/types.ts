@@ -31,7 +31,9 @@ export const SOCKET_EVENTS = {
     COMMAND: 'command',
     UPLOAD_CONTENT: 'uploadContent',
     CONTENT_ACCEPTED: 'contentAccepted',
-    CONTENT_REJECTED: 'contentRejected'
+    CONTENT_REJECTED: 'contentRejected',
+    PLAYER_JOIN: 'playerJoin',
+    PLAYER_INPUT: 'playerInput'
 };
 
 // Sandbox Content Schema
@@ -55,5 +57,17 @@ export interface EntityDef {
 
 export interface ContentPack {
     definitions: Record<string, EntityDef>;
+}
+
+export interface PlayerJoinData {
+    nickname: string;
+    color: string;
+}
+
+export interface PlayerInput {
+    up: boolean;
+    down: boolean;
+    left: boolean;
+    right: boolean;
 }
 

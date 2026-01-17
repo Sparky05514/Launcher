@@ -1,4 +1,4 @@
-import { EntityState, WorldState, Vector2, ContentPack, EntityDef } from '../shared/types';
+import { EntityState, WorldState, Vector2, ContentPack, EntityDef, PlayerInput } from '../shared/types';
 import { v4 as uuidv4 } from 'uuid';
 import { SandboxInterpreter } from './interpreter';
 
@@ -6,6 +6,7 @@ export class WorldManager {
     private entities: Map<string, EntityState> = new Map();
     private definitions: Map<string, EntityDef> = new Map();
     private interpreter: SandboxInterpreter;
+    private playerInputs: Map<string, PlayerInput> = new Map();
 
     constructor() {
         this.interpreter = new SandboxInterpreter();
@@ -36,9 +37,7 @@ export class WorldManager {
             }
         });
 
-        // Spawn test entities
-        this.spawnEntity('blob', { x: 400, y: 300 });
-        this.spawnEntity('runner', { x: 100, y: 100 });
+        // No auto test entities - players spawn themselves
     }
 
     public loadContent(pack: ContentPack) {
@@ -60,12 +59,11 @@ export class WorldManager {
         const entity: EntityState = {
             id,
             type,
-            pos: { ...pos }, // copy
+            pos: { ...pos },
             color: def.color,
             size: def.radius
         };
 
-        // Run onSpawn if exists
         if (def.behavior?.onSpawn) {
             this.interpreter.execute(entity, def.behavior.onSpawn, 0);
         }
@@ -74,8 +72,26 @@ export class WorldManager {
         return id;
     }
 
+    public spawnPlayer(nickname: string, color: string): string {
+        const id = uuidv4();
+        const entity: EntityState = {
+            id,
+            type: nickname, // Use nickname as the "type" for display
+            pos: { x: Math.random() * 700 + 50, y: Math.random() * 500 + 50 },
+            color: color,
+            size: 20
+        };
+        this.entities.set(id, entity);
+        return id;
+    }
+
+    public setPlayerInput(entityId: string, input: PlayerInput) {
+        this.playerInputs.set(entityId, input);
+    }
+
     public removeEntity(id: string) {
         this.entities.delete(id);
+        this.playerInputs.delete(id);
     }
 
     public getState(): WorldState {
@@ -90,6 +106,25 @@ export class WorldManager {
     }
 
     public tick(deltaTime: number) {
+        const playerSpeed = 200;
+        const moveAmt = playerSpeed * (deltaTime / 1000);
+
+        // Handle player movement
+        this.playerInputs.forEach((input, entityId) => {
+            const entity = this.entities.get(entityId);
+            if (entity) {
+                if (input.up) entity.pos.y -= moveAmt;
+                if (input.down) entity.pos.y += moveAmt;
+                if (input.left) entity.pos.x -= moveAmt;
+                if (input.right) entity.pos.x += moveAmt;
+
+                // Keep in bounds (simple)
+                entity.pos.x = Math.max(20, Math.min(780, entity.pos.x));
+                entity.pos.y = Math.max(20, Math.min(580, entity.pos.y));
+            }
+        });
+
+        // Handle NPC behaviors
         this.entities.forEach(entity => {
             const def = this.definitions.get(entity.type);
             if (def && def.behavior?.onTick) {
@@ -98,3 +133,4 @@ export class WorldManager {
         });
     }
 }
+
