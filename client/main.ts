@@ -111,6 +111,25 @@ setInterval(() => {
         myLocalPos.y = Math.max(WORLD_BOUNDS.minY, Math.min(WORLD_BOUNDS.maxY, myLocalPos.y));
     }
 
+    // 1.1 Simple Circle-Circle Collision (runs even if stationary)
+    if (myLocalPos && GAME_CONFIG.COLLISION_ENABLED && currentState) {
+        Object.values(currentState.entities).forEach(other => {
+            if (other.id === myEntityId) return;
+
+            const dx = myLocalPos!.x - other.pos.x;
+            const dy = myLocalPos!.y - other.pos.y;
+            const distance = Math.sqrt(dx * dx + dy * dy);
+            const minDistance = (GAME_CONFIG.PLAYER_SIZE) + (other.size || 10);
+
+            if (distance < minDistance) {
+                // Collision detected! Push us away.
+                const angle = Math.atan2(dy, dx);
+                myLocalPos!.x = other.pos.x + Math.cos(angle) * minDistance;
+                myLocalPos!.y = other.pos.y + Math.sin(angle) * minDistance;
+            }
+        });
+    }
+
     // 2. Client Authority: Send local position to server
     if (myLocalPos) {
         socket.emit(SOCKET_EVENTS.PLAYER_POSITION, myLocalPos);
@@ -178,20 +197,34 @@ function drawEntity(entity: EntityState) {
 }
 
 function render() {
-    // Clear screen
-    ctx.fillStyle = GAME_CONFIG.BACKGROUND_COLOR;
+    // 1. Draw Void (everything outside the game world)
+    ctx.fillStyle = GAME_CONFIG.VOID_COLOR;
     ctx.fillRect(0, 0, canvas.width, canvas.height);
 
-    // Draw grid for reference
+    // 2. Draw World Background
+    ctx.fillStyle = GAME_CONFIG.BACKGROUND_COLOR;
+    ctx.fillRect(0, 0, GAME_CONFIG.WORLD_WIDTH, GAME_CONFIG.WORLD_HEIGHT);
+
+    // 3. Draw Grid (Limited to world bounds)
     ctx.strokeStyle = GAME_CONFIG.GRID_COLOR;
     ctx.lineWidth = 1;
     const gridSize = GAME_CONFIG.GRID_SIZE;
-    for (let x = 0; x < canvas.width; x += gridSize) {
-        ctx.beginPath(); ctx.moveTo(x, 0); ctx.lineTo(x, canvas.height); ctx.stroke();
+
+    ctx.beginPath();
+    for (let x = 0; x <= GAME_CONFIG.WORLD_WIDTH; x += gridSize) {
+        ctx.moveTo(x, 0);
+        ctx.lineTo(x, GAME_CONFIG.WORLD_HEIGHT);
     }
-    for (let y = 0; y < canvas.height; y += gridSize) {
-        ctx.beginPath(); ctx.moveTo(0, y); ctx.lineTo(canvas.width, y); ctx.stroke();
+    for (let y = 0; y <= GAME_CONFIG.WORLD_HEIGHT; y += gridSize) {
+        ctx.moveTo(0, y);
+        ctx.lineTo(GAME_CONFIG.WORLD_WIDTH, y);
     }
+    ctx.stroke();
+
+    // 4. Draw World Border
+    ctx.strokeStyle = '#333';
+    ctx.lineWidth = 4;
+    ctx.strokeRect(0, 0, GAME_CONFIG.WORLD_WIDTH, GAME_CONFIG.WORLD_HEIGHT);
 
     if (currentState) {
         Object.values(currentState.entities).forEach(entity => {

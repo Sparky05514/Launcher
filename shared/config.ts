@@ -19,6 +19,10 @@ export const GAME_CONFIG = {
     GRID_SIZE: 50,
     BACKGROUND_COLOR: '#ffffff',
     GRID_COLOR: '#eee',
+    VOID_COLOR: '#f0f0f0',
+
+    // Physics
+    COLLISION_ENABLED: true,
 
     // Juice Settings
     TRAIL_ENABLED: true,
