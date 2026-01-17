@@ -33,7 +33,8 @@ export const SOCKET_EVENTS = {
     CONTENT_ACCEPTED: 'contentAccepted',
     CONTENT_REJECTED: 'contentRejected',
     PLAYER_JOIN: 'playerJoin',
-    PLAYER_INPUT: 'playerInput'
+    PLAYER_INPUT: 'playerInput',
+    CONFIG_SYNC: 'configSync'
 };
 
 // Sandbox Content Schema

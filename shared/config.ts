@@ -5,7 +5,7 @@
 export const GAME_CONFIG = {
     // Server & Networking
     SERVER_PORT: 3000,
-    TICK_RATE: 240, // Ticks per second
+    TICK_RATE: 120, // Ticks per second
 
     // World Dimensions
     WORLD_WIDTH: 800,
@@ -21,10 +21,20 @@ export const GAME_CONFIG = {
     GRID_COLOR: '#eee',
 };
 
-// Calculated Bounds (to prevent hardcoding the math everywhere)
-export const WORLD_BOUNDS = {
+// Calculated Bounds - these will be updated if the config is synced
+export let WORLD_BOUNDS = {
     minX: GAME_CONFIG.PLAYER_SIZE,
     maxX: GAME_CONFIG.WORLD_WIDTH - GAME_CONFIG.PLAYER_SIZE,
     minY: GAME_CONFIG.PLAYER_SIZE,
     maxY: GAME_CONFIG.WORLD_HEIGHT - GAME_CONFIG.PLAYER_SIZE
 };
+
+/**
+ * Updates the calculated bounds based on current config
+ */
+export function updateBounds() {
+    WORLD_BOUNDS.minX = GAME_CONFIG.PLAYER_SIZE;
+    WORLD_BOUNDS.maxX = GAME_CONFIG.WORLD_WIDTH - GAME_CONFIG.PLAYER_SIZE;
+    WORLD_BOUNDS.minY = GAME_CONFIG.PLAYER_SIZE;
+    WORLD_BOUNDS.maxY = GAME_CONFIG.WORLD_HEIGHT - GAME_CONFIG.PLAYER_SIZE;
+}

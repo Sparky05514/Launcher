@@ -30,6 +30,7 @@ io.on('connection', (socket) => {
     console.log('Client connected:', socket.id);
 
     // Send immediate state
+    socket.emit(SOCKET_EVENTS.CONFIG_SYNC, GAME_CONFIG);
     socket.emit(SOCKET_EVENTS.WORLD_UPDATE, world.getState());
 
     socket.on('disconnect', () => {

@@ -1,6 +1,6 @@
 import { io } from 'socket.io-client';
 import { SOCKET_EVENTS, WorldState, EntityState, PlayerInput } from '../shared/types';
-import { GAME_CONFIG, WORLD_BOUNDS } from '../shared/config';
+import { GAME_CONFIG, WORLD_BOUNDS, updateBounds } from '../shared/config';
 
 // Connect to remote server if configured, otherwise default (localhost proxy)
 const serverUrl = import.meta.env.VITE_SERVER_URL;
@@ -72,6 +72,12 @@ socket.on(SOCKET_EVENTS.WORLD_UPDATE, (state: WorldState) => {
             }
         }
     }
+});
+
+socket.on(SOCKET_EVENTS.CONFIG_SYNC, (serverConfig: any) => {
+    console.log('Syncing config from server...', serverConfig);
+    Object.assign(GAME_CONFIG, serverConfig);
+    updateBounds();
 });
 
 // WASD Input
