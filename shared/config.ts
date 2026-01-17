@@ -12,8 +12,8 @@ export const GAME_CONFIG = {
     WORLD_HEIGHT: 600,
 
     // Player Settings
-    PLAYER_SPEED: 200,
-    PLAYER_SIZE: 20,
+    PLAYER_SPEED: 400,
+    PLAYER_SIZE: 30,
 
     // Visuals (Client Only)
     GRID_SIZE: 50,

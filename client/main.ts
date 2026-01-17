@@ -102,7 +102,7 @@ setInterval(() => {
 
     // 1. Client-Side Prediction
     if (myLocalPos && (keys.up || keys.down || keys.left || keys.right)) {
-        const deltaTime = 1000 / 30;
+        const deltaTime = 1000 / GAME_CONFIG.TICK_RATE;
         const moveAmt = GAME_CONFIG.PLAYER_SPEED * (deltaTime / 1000);
 
         if (keys.up) myLocalPos.y -= moveAmt;
@@ -117,7 +117,7 @@ setInterval(() => {
 
     // 2. Send input to server
     socket.emit(SOCKET_EVENTS.PLAYER_INPUT, keys);
-}, 1000 / 30); // 30 times per second
+}, 1000 / GAME_CONFIG.TICK_RATE);
 
 function drawEntity(entity: EntityState) {
     ctx.save();
