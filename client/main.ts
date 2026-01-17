@@ -19,9 +19,11 @@ const keys: PlayerInput = { up: false, down: false, left: false, right: false };
 // Admin / Server View Detection
 const urlParams = new URLSearchParams(window.location.search);
 const isServerView = urlParams.get('admin') === 'true';
+let serverZoom = GAME_CONFIG.SERVER_VIEW_SCALE;
 
 let myLocalPos: { x: number, y: number } | null = null;
 const entityTrails: Map<string, { x: number, y: number, timestamp: number }[]> = new Map();
+let serverMessage: { text: string, timestamp: number } | null = null;
 
 function resize() {
     canvas.width = window.innerWidth;
@@ -36,6 +38,7 @@ const joinBtn = document.getElementById('joinBtn')!;
 const nicknameInput = document.getElementById('nickname') as HTMLInputElement;
 const colorInput = document.getElementById('blobColor') as HTMLInputElement;
 const ui = document.getElementById('ui')!;
+const adminPanel = document.getElementById('adminPanel')!;
 
 joinBtn.addEventListener('click', () => {
     const nickname = nicknameInput.value.trim() || 'Player';
@@ -52,7 +55,55 @@ joinBtn.addEventListener('click', () => {
 if (isServerView) {
     joinScreen.style.display = 'none';
     ui.style.display = 'block';
+    adminPanel.style.display = 'block';
     hasJoined = true;
+
+    // Admin Controls
+    const spawnBotBtn = document.getElementById('spawnBotBtn')!;
+    const spawn10Btn = document.getElementById('spawn10Btn')!;
+    const clearAllBtn = document.getElementById('clearAllBtn')!;
+    const clearTrailsBtn = document.getElementById('clearTrailsBtn')!;
+    const broadcastBtn = document.getElementById('broadcastBtn')!;
+    const broadcastInput = document.getElementById('broadcastInput') as HTMLInputElement;
+    const speedSlider = document.getElementById('speedSlider') as HTMLInputElement;
+    const speedVal = document.getElementById('speedVal')!;
+    const zoomSlider = document.getElementById('zoomSlider') as HTMLInputElement;
+    const zoomVal = document.getElementById('zoomVal')!;
+
+    spawnBotBtn.addEventListener('click', () => {
+        socket.emit(SOCKET_EVENTS.COMMAND, { type: 'chat', payload: '/spawn blob' });
+    });
+
+    spawn10Btn.addEventListener('click', () => {
+        socket.emit(SOCKET_EVENTS.COMMAND, { type: 'chat', payload: '/spawn blob 10' });
+    });
+
+    clearAllBtn.addEventListener('click', () => {
+        socket.emit(SOCKET_EVENTS.COMMAND, { type: 'chat', payload: '/clear' });
+    });
+
+    clearTrailsBtn.addEventListener('click', () => {
+        entityTrails.clear();
+    });
+
+    broadcastBtn.addEventListener('click', () => {
+        const msg = broadcastInput.value.trim();
+        if (msg) {
+            socket.emit(SOCKET_EVENTS.COMMAND, { type: 'chat', payload: `/broadcast ${msg}` });
+            broadcastInput.value = '';
+        }
+    });
+
+    speedSlider.addEventListener('input', () => {
+        const speed = parseFloat(speedSlider.value);
+        speedVal.textContent = speed.toFixed(1) + 'x';
+        socket.emit(SOCKET_EVENTS.COMMAND, { type: 'chat', payload: `/speed ${speed}` });
+    });
+
+    zoomSlider.addEventListener('input', () => {
+        serverZoom = parseFloat(zoomSlider.value);
+        zoomVal.textContent = serverZoom.toFixed(1);
+    });
 }
 
 socket.on('connect', () => {
@@ -62,6 +113,11 @@ socket.on('connect', () => {
 socket.on('playerSpawned', (entityId: string) => {
     myEntityId = entityId;
     console.log('My entity ID:', myEntityId);
+});
+
+socket.on(SOCKET_EVENTS.SERVER_MESSAGE, (data: { message: string }) => {
+    console.log('Server Broadcast:', data.message);
+    serverMessage = { text: data.message, timestamp: Date.now() };
 });
 
 socket.on(SOCKET_EVENTS.WORLD_UPDATE, (state: WorldState) => {
@@ -212,19 +268,19 @@ function render() {
 
     // Apply server view scaling
     if (isServerView) {
-        ctx.scale(GAME_CONFIG.SERVER_VIEW_SCALE, GAME_CONFIG.SERVER_VIEW_SCALE);
+        ctx.scale(serverZoom, serverZoom);
     }
 
     // 1. Draw Void (everything outside the game world)
-    ctx.fillStyle = GAME_CONFIG.VOID_COLOR;
+    ctx.fillStyle = isServerView ? '#000000' : GAME_CONFIG.VOID_COLOR;
     ctx.fillRect(0, 0, canvas.width, canvas.height);
 
     // 2. Draw World Background
-    ctx.fillStyle = GAME_CONFIG.BACKGROUND_COLOR;
+    ctx.fillStyle = isServerView ? '#000000' : GAME_CONFIG.BACKGROUND_COLOR;
     ctx.fillRect(0, 0, GAME_CONFIG.WORLD_WIDTH, GAME_CONFIG.WORLD_HEIGHT);
 
     // 3. Draw Grid (Limited to world bounds)
-    ctx.strokeStyle = GAME_CONFIG.GRID_COLOR;
+    ctx.strokeStyle = isServerView ? 'rgba(255, 255, 255, 0.1)' : GAME_CONFIG.GRID_COLOR;
     ctx.lineWidth = 1;
     const gridSize = GAME_CONFIG.GRID_SIZE;
 
@@ -240,7 +296,7 @@ function render() {
     ctx.stroke();
 
     // 4. Draw World Border
-    ctx.strokeStyle = '#333';
+    ctx.strokeStyle = isServerView ? '#00d2ff' : '#333';
     ctx.lineWidth = 4;
     ctx.strokeRect(0, 0, GAME_CONFIG.WORLD_WIDTH, GAME_CONFIG.WORLD_HEIGHT);
 
@@ -301,6 +357,19 @@ function render() {
     } else {
         ctx.fillStyle = 'black';
         ctx.fillText('Connecting...', 10, 20);
+    }
+
+    // 5. Draw Server Broadcast
+    if (serverMessage && Date.now() - serverMessage.timestamp < 5000) {
+        ctx.save();
+        ctx.resetTransform(); // Keep at full screen
+        ctx.fillStyle = 'rgba(0, 210, 255, 0.9)';
+        ctx.font = 'bold 24px sans-serif';
+        ctx.textAlign = 'center';
+        ctx.shadowBlur = 10;
+        ctx.shadowColor = 'rgba(0,0,0,0.5)';
+        ctx.fillText(serverMessage.text, canvas.width / 2, 60);
+        ctx.restore();
     }
     ctx.restore();
     requestAnimationFrame(render);

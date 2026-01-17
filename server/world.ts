@@ -7,6 +7,7 @@ export class WorldManager {
     private entities: Map<string, EntityState> = new Map();
     private definitions: Map<string, EntityDef> = new Map();
     private interpreter: SandboxInterpreter;
+    private worldSpeed: number = 1.0;
 
     constructor() {
         this.interpreter = new SandboxInterpreter();
@@ -107,6 +108,20 @@ export class WorldManager {
         this.entities.delete(id);
     }
 
+    public clearExcept(keepIds: Set<string>) {
+        const idsToRemove: string[] = [];
+        this.entities.forEach((_, id) => {
+            if (!keepIds.has(id)) {
+                idsToRemove.push(id);
+            }
+        });
+        idsToRemove.forEach(id => this.entities.delete(id));
+    }
+
+    public setWorldSpeed(speed: number) {
+        this.worldSpeed = speed;
+    }
+
     public getState(): WorldState {
         const entitiesRecord: Record<string, EntityState> = {};
         this.entities.forEach((e, id) => {
@@ -123,11 +138,11 @@ export class WorldManager {
         // The server no longer processes inputs here.
 
         // Handle NPC behaviors and Chat expiration
-        const deltaSec = deltaTime / 1000;
+        const deltaSec = (deltaTime * this.worldSpeed) / 1000;
         this.entities.forEach(entity => {
             // Expire chat
             if (entity.chatTimer !== undefined) {
-                entity.chatTimer -= deltaSec;
+                entity.chatTimer -= deltaSec / this.worldSpeed; // Chat decays in real-time
                 if (entity.chatTimer <= 0) {
                     delete entity.chatMessage;
                     delete entity.chatTimer;
@@ -136,7 +151,7 @@ export class WorldManager {
 
             const def = this.definitions.get(entity.type);
             if (def && def.behavior?.onTick) {
-                this.interpreter.execute(entity, def.behavior.onTick, deltaTime);
+                this.interpreter.execute(entity, def.behavior.onTick, deltaTime * this.worldSpeed);
             }
         });
     }

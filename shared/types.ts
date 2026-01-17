@@ -35,9 +35,10 @@ export const SOCKET_EVENTS = {
     CONTENT_ACCEPTED: 'contentAccepted',
     CONTENT_REJECTED: 'contentRejected',
     PLAYER_JOIN: 'playerJoin',
-    PLAYER_POSITION: 'playerPos',
-    CONFIG_SYNC: 'configSync'
-};
+    PLAYER_POSITION: 'player_position',
+    CONFIG_SYNC: 'config_sync',
+    SERVER_MESSAGE: 'server_message',
+} as const;
 
 // Sandbox Content Schema
 export interface Action {

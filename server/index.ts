@@ -64,12 +64,38 @@ io.on('connection', (socket) => {
             const text = cmd.payload as string;
 
             if (text.startsWith('/')) {
-                if (text.startsWith('/spawn ')) {
-                    const type = text.split(' ')[1];
-                    world.spawnEntity(type, {
-                        x: Math.random() * GAME_CONFIG.WORLD_WIDTH,
-                        y: Math.random() * GAME_CONFIG.WORLD_HEIGHT
-                    });
+                const parts = text.split(' ');
+                const command = parts[0];
+
+                if (command === '/spawn') {
+                    const type = parts[1];
+                    const count = parseInt(parts[2]) || 1;
+                    for (let i = 0; i < count; i++) {
+                        world.spawnEntity(type, {
+                            x: Math.random() * GAME_CONFIG.WORLD_WIDTH,
+                            y: Math.random() * GAME_CONFIG.WORLD_HEIGHT
+                        });
+                    }
+                }
+
+                if (command === '/clear') {
+                    const activePlayerIds = new Set(playerEntities.values());
+                    world.getState().entities;
+                    // We need a way to remove multiple entities from world
+                    // I'll add a clearAllNPCs method to world that takes a set of IDs to keep
+                    world.clearExcept(activePlayerIds);
+                }
+
+                if (command === '/broadcast') {
+                    const message = parts.slice(1).join(' ');
+                    io.emit(SOCKET_EVENTS.SERVER_MESSAGE, { message });
+                }
+
+                if (command === '/speed') {
+                    const speed = parseFloat(parts[1]);
+                    if (!isNaN(speed)) {
+                        world.setWorldSpeed(speed);
+                    }
                 }
 
                 if (text.startsWith('/upload ')) {
