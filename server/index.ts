@@ -18,7 +18,7 @@ const io = new Server(httpServer, {
 const world = new WorldManager();
 
 // Serve static files (Client Build)
-const clientDist = path.join(__dirname, '../../client/dist');
+const clientDist = path.join(process.cwd(), 'client/dist');
 app.use(express.static(clientDist));
 
 
