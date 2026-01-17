@@ -1,0 +1,21 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Sandbox Launcher</title>
+    <style>
+      body { margin: 0; overflow: hidden; background: #222; }
+      canvas { display: block; background: white; }
+      #ui { position: absolute; bottom: 10px; left: 10px; font-family: monospace; }
+      input { background: rgba(0,0,0,0.5); color: white; border: none; padding: 5px; width: 300px; }
+    </style>
+  </head>
+  <body>
+    <canvas id="gameCanvas"></canvas>
+    <div id="ui">
+        <input type="text" id="commandInput" placeholder="Enter command (/help)..." />
+    </div>
+    <script type="module" src="/main.ts"></script>
+  </body>
+</html>
