@@ -12,6 +12,8 @@ export interface EntityState {
     // We can add color or other visual props here
     color?: string;
     size?: number;
+    chatMessage?: string;
+    chatTimer?: number;
 }
 
 export interface WorldState {

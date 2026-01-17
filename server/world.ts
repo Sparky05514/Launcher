@@ -7,7 +7,6 @@ export class WorldManager {
     private entities: Map<string, EntityState> = new Map();
     private definitions: Map<string, EntityDef> = new Map();
     private interpreter: SandboxInterpreter;
-    private playerInputs: Map<string, PlayerInput> = new Map();
 
     constructor() {
         this.interpreter = new SandboxInterpreter();
@@ -96,9 +95,16 @@ export class WorldManager {
         }
     }
 
+    public setChatMessage(entityId: string, message: string) {
+        const entity = this.entities.get(entityId);
+        if (entity) {
+            entity.chatMessage = message;
+            entity.chatTimer = GAME_CONFIG.CHAT_DURATION_SEC;
+        }
+    }
+
     public removeEntity(id: string) {
         this.entities.delete(id);
-        this.playerInputs.delete(id);
     }
 
     public getState(): WorldState {
@@ -116,8 +122,18 @@ export class WorldManager {
         // Player movement is now Client-Authoritative.
         // The server no longer processes inputs here.
 
-        // Handle NPC behaviors
+        // Handle NPC behaviors and Chat expiration
+        const deltaSec = deltaTime / 1000;
         this.entities.forEach(entity => {
+            // Expire chat
+            if (entity.chatTimer !== undefined) {
+                entity.chatTimer -= deltaSec;
+                if (entity.chatTimer <= 0) {
+                    delete entity.chatMessage;
+                    delete entity.chatTimer;
+                }
+            }
+
             const def = this.definitions.get(entity.type);
             if (def && def.behavior?.onTick) {
                 this.interpreter.execute(entity, def.behavior.onTick, deltaTime);

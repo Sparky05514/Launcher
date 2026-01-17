@@ -63,24 +63,31 @@ io.on('connection', (socket) => {
         if (cmd.type === 'chat') {
             const text = cmd.payload as string;
 
-            if (text.startsWith('/spawn ')) {
-                const type = text.split(' ')[1];
-                // Spawn at random location within world bounds
-                world.spawnEntity(type, {
-                    x: Math.random() * GAME_CONFIG.WORLD_WIDTH,
-                    y: Math.random() * GAME_CONFIG.WORLD_HEIGHT
-                });
-            }
+            if (text.startsWith('/')) {
+                if (text.startsWith('/spawn ')) {
+                    const type = text.split(' ')[1];
+                    world.spawnEntity(type, {
+                        x: Math.random() * GAME_CONFIG.WORLD_WIDTH,
+                        y: Math.random() * GAME_CONFIG.WORLD_HEIGHT
+                    });
+                }
 
-            if (text.startsWith('/upload ')) {
-                try {
-                    const jsonStr = text.substring(8);
-                    const pack = JSON.parse(jsonStr);
-                    world.loadContent(pack);
-                    socket.emit(SOCKET_EVENTS.CONTENT_ACCEPTED, { message: 'Content loaded!' });
-                } catch (e) {
-                    socket.emit(SOCKET_EVENTS.CONTENT_REJECTED, { error: 'Invalid JSON' });
-                    console.error('Upload error', e);
+                if (text.startsWith('/upload ')) {
+                    try {
+                        const jsonStr = text.substring(8);
+                        const pack = JSON.parse(jsonStr);
+                        world.loadContent(pack);
+                        socket.emit(SOCKET_EVENTS.CONTENT_ACCEPTED, { message: 'Content loaded!' });
+                    } catch (e) {
+                        socket.emit(SOCKET_EVENTS.CONTENT_REJECTED, { error: 'Invalid JSON' });
+                        console.error('Upload error', e);
+                    }
+                }
+            } else {
+                // Not a command: Broadcast as chat bubble
+                const entityId = playerEntities.get(socket.id);
+                if (entityId) {
+                    world.setChatMessage(entityId, text);
                 }
             }
         }

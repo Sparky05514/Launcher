@@ -19,6 +19,11 @@ export const GAME_CONFIG = {
     GRID_SIZE: 50,
     BACKGROUND_COLOR: '#ffffff',
     GRID_COLOR: '#eee',
+
+    // Juice Settings
+    TRAIL_ENABLED: true,
+    TRAIL_LENGTH: 10,
+    CHAT_DURATION_SEC: 5,
 };
 
 // Calculated Bounds - these will be updated if the config is synced

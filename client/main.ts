@@ -16,8 +16,8 @@ let hasJoined = false;
 // Input state
 const keys: PlayerInput = { up: false, down: false, left: false, right: false };
 
-// Local prediction state
 let myLocalPos: { x: number, y: number } | null = null;
+const entityTrails: Map<string, { x: number, y: number }[]> = new Map();
 
 function resize() {
     canvas.width = window.innerWidth;
@@ -128,11 +128,51 @@ function drawEntity(entity: EntityState) {
     ctx.arc(0, 0, entity.size || 10, 0, Math.PI * 2);
     ctx.fill();
 
-    // Draw nickname above (use type as fallback, or nickname stored in type)
+    // Draw nickname
     ctx.fillStyle = 'black';
-    ctx.font = '12px sans-serif';
+    ctx.font = 'bold 12px sans-serif';
     ctx.textAlign = 'center';
-    ctx.fillText(entity.type, 0, -(entity.size || 10) - 5);
+    ctx.fillText(entity.type, 0, -(entity.size || 10) - 8);
+
+    // Draw Chat Bubble
+    if (entity.chatMessage) {
+        ctx.font = '14px sans-serif';
+        const metrics = ctx.measureText(entity.chatMessage);
+        const padding = 8;
+        const bubbleWidth = metrics.width + padding * 2;
+        const bubbleHeight = 24;
+        const bubbleY = -(entity.size || 10) - 40;
+
+        // Bubble background
+        ctx.fillStyle = 'white';
+        ctx.strokeStyle = '#ccc';
+        ctx.lineWidth = 1;
+
+        // Rounded rect for bubble
+        const r = 10;
+        const x = -bubbleWidth / 2;
+        const y = bubbleY;
+        ctx.beginPath();
+        ctx.moveTo(x + r, y);
+        ctx.lineTo(x + bubbleWidth - r, y);
+        ctx.quadraticCurveTo(x + bubbleWidth, y, x + bubbleWidth, y + r);
+        ctx.lineTo(x + bubbleWidth, y + bubbleHeight - r);
+        ctx.quadraticCurveTo(x + bubbleWidth, y + bubbleHeight, x + bubbleWidth - r, y + bubbleHeight);
+        ctx.lineTo(x + bubbleWidth / 2 + 10, y + bubbleHeight);
+        ctx.lineTo(x + bubbleWidth / 2, y + bubbleHeight + 10); // Pointy part
+        ctx.lineTo(x + bubbleWidth / 2 - 10, y + bubbleHeight);
+        ctx.lineTo(x + r, y + bubbleHeight);
+        ctx.quadraticCurveTo(x, y + bubbleHeight, x, y + bubbleHeight - r);
+        ctx.lineTo(x, y + r);
+        ctx.quadraticCurveTo(x, y, x + r, y);
+        ctx.closePath();
+        ctx.fill();
+        ctx.stroke();
+
+        // Chat text
+        ctx.fillStyle = '#333';
+        ctx.fillText(entity.chatMessage, 0, bubbleY + 16);
+    }
 
     ctx.restore();
 }
@@ -155,12 +195,45 @@ function render() {
 
     if (currentState) {
         Object.values(currentState.entities).forEach(entity => {
-            // Use local position for the player's own entity
+            const pos = (entity.id === myEntityId && myLocalPos) ? myLocalPos : entity.pos;
+
+            // 1. Trail Logic
+            if (GAME_CONFIG.TRAIL_ENABLED) {
+                let trail = entityTrails.get(entity.id) || [];
+                // Only add point if it moved significantly
+                const lastPoint = trail[trail.length - 1];
+                if (!lastPoint || Math.abs(lastPoint.x - pos.x) > 1 || Math.abs(lastPoint.y - pos.y) > 1) {
+                    trail.push({ ...pos });
+                }
+                if (trail.length > GAME_CONFIG.TRAIL_LENGTH) trail.shift();
+                entityTrails.set(entity.id, trail);
+
+                // Draw Trail
+                ctx.beginPath();
+                ctx.strokeStyle = entity.color || 'black';
+                ctx.lineCap = 'round';
+                ctx.lineJoin = 'round';
+                trail.forEach((p, i) => {
+                    ctx.globalAlpha = i / trail.length; // Fade trail
+                    ctx.lineWidth = (entity.size || 10) * (i / trail.length) * 0.8;
+                    if (i === 0) ctx.moveTo(p.x, p.y);
+                    else ctx.lineTo(p.x, p.y);
+                });
+                ctx.stroke();
+                ctx.globalAlpha = 1.0;
+            }
+
+            // 2. Draw Entity
             if (entity.id === myEntityId && myLocalPos) {
                 drawEntity({ ...entity, pos: myLocalPos });
             } else {
                 drawEntity(entity);
             }
+        });
+
+        // Cleanup stale trails
+        entityTrails.forEach((_, id) => {
+            if (!currentState!.entities[id]) entityTrails.delete(id);
         });
 
         ctx.fillStyle = 'black';
