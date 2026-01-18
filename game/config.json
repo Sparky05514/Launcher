@@ -1,9 +1,9 @@
 {
     "SERVER_PORT": 3000,
-    "TICK_RATE": 60,
+    "TICK_RATE": 120,
     "WORLD_WIDTH": 800,
     "WORLD_HEIGHT": 600,
-    "SERVER_VIEW_SCALE": 0.5,
+    "SERVER_VIEW_SCALE": 1,
     "PLAYER_SPEED": 400,
     "PLAYER_SIZE": 30,
     "GRID_SIZE": 50,

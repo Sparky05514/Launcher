@@ -1,13 +1,14 @@
 import { EntityState, WorldState, Vector2, ContentPack, EntityDef, PlayerInput } from '../shared/types';
 import { GAME_CONFIG, WORLD_BOUNDS } from '../shared/config';
 import { v4 as uuidv4 } from 'uuid';
-import { SandboxInterpreter } from './interpreter';
+import { SandboxInterpreter, InterpreterContext } from './interpreter';
 
 export class WorldManager {
     private entities: Map<string, EntityState> = new Map();
     private definitions: Map<string, EntityDef> = new Map();
     private interpreter: SandboxInterpreter;
     private worldSpeed: number = 1.0;
+    private playerEntityIds: Set<string> = new Set();
 
     constructor() {
         this.interpreter = new SandboxInterpreter();
@@ -87,7 +88,10 @@ export class WorldManager {
             type,
             pos: { ...pos },
             color: def.color,
-            size: def.radius
+            size: def.radius,
+            visual: def.visual,
+            health: def.health,
+            maxHealth: def.health
         };
 
         if (def.behavior?.onSpawn) {
@@ -102,15 +106,18 @@ export class WorldManager {
         const id = uuidv4();
         const entity: EntityState = {
             id,
-            type: nickname, // Use nickname as the "type" for display
+            type: nickname,
             pos: {
                 x: Math.random() * (GAME_CONFIG.WORLD_WIDTH - 100) + 50,
                 y: Math.random() * (GAME_CONFIG.WORLD_HEIGHT - 100) + 50
             },
             color: color,
-            size: GAME_CONFIG.PLAYER_SIZE
+            size: GAME_CONFIG.PLAYER_SIZE,
+            health: 100,
+            maxHealth: 100
         };
         this.entities.set(id, entity);
+        this.playerEntityIds.add(id);
         return id;
     }
 
@@ -131,6 +138,7 @@ export class WorldManager {
 
     public removeEntity(id: string) {
         this.entities.delete(id);
+        this.playerEntityIds.delete(id);
     }
 
     public clearExcept(keepIds: Set<string>) {
@@ -159,15 +167,50 @@ export class WorldManager {
     }
 
     public tick(deltaTime: number) {
-        // Player movement is now Client-Authoritative.
-        // The server no longer processes inputs here.
+        const deltaSec = (deltaTime * this.worldSpeed) / 1000;
+        const toDestroy: Set<string> = new Set();
+
+        // Set up interpreter context
+        const ctx: InterpreterContext = {
+            allEntities: this.entities,
+            playerEntities: this.playerEntityIds,
+            toDestroy
+        };
+        this.interpreter.setContext(ctx);
+
+        // Collision detection
+        const entityList = Array.from(this.entities.values());
+        for (let i = 0; i < entityList.length; i++) {
+            for (let j = i + 1; j < entityList.length; j++) {
+                const a = entityList[i];
+                const b = entityList[j];
+                const dx = a.pos.x - b.pos.x;
+                const dy = a.pos.y - b.pos.y;
+                const dist = Math.sqrt(dx * dx + dy * dy);
+                const minDist = (a.size || 10) + (b.size || 10);
+
+                if (dist < minDist) {
+                    // Collision! Execute onCollision behaviors
+                    const defA = this.definitions.get(a.type);
+                    const defB = this.definitions.get(b.type);
+
+                    if (defA?.behavior?.onCollision) {
+                        // A's collision behavior affects B
+                        this.interpreter.execute(b, defA.behavior.onCollision, deltaTime);
+                    }
+                    if (defB?.behavior?.onCollision) {
+                        // B's collision behavior affects A
+                        this.interpreter.execute(a, defB.behavior.onCollision, deltaTime);
+                    }
+                }
+            }
+        }
 
         // Handle NPC behaviors and Chat expiration
-        const deltaSec = (deltaTime * this.worldSpeed) / 1000;
         this.entities.forEach(entity => {
             // Expire chat
             if (entity.chatTimer !== undefined) {
-                entity.chatTimer -= deltaSec / this.worldSpeed; // Chat decays in real-time
+                entity.chatTimer -= deltaSec / this.worldSpeed;
                 if (entity.chatTimer <= 0) {
                     delete entity.chatMessage;
                     delete entity.chatTimer;
@@ -179,6 +222,12 @@ export class WorldManager {
                 this.interpreter.execute(entity, def.behavior.onTick, deltaTime * this.worldSpeed);
             }
         });
+
+        // Cleanup destroyed entities
+        for (const id of toDestroy) {
+            this.entities.delete(id);
+            this.playerEntityIds.delete(id);
+        }
     }
 }
 

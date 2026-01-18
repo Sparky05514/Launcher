@@ -32,5 +32,70 @@
                 }
             ]
         }
+    },
+    "chaser": {
+        "type": "chaser",
+        "color": "purple",
+        "radius": 12,
+        "health": 30,
+        "visual": {
+            "shape": "triangle"
+        },
+        "behavior": {
+            "onTick": [
+                {
+                    "opcode": "follow",
+                    "params": {
+                        "target": "player",
+                        "speed": 80
+                    }
+                }
+            ],
+            "onCollision": [
+                {
+                    "opcode": "damage",
+                    "params": {
+                        "amount": 5
+                    }
+                }
+            ]
+        }
+    },
+    "coward": {
+        "type": "coward",
+        "color": "yellow",
+        "radius": 8,
+        "visual": {
+            "shape": "rect",
+            "width": 16,
+            "height": 16
+        },
+        "behavior": {
+            "onTick": [
+                {
+                    "opcode": "flee",
+                    "params": {
+                        "speed": 120
+                    }
+                }
+            ]
+        }
+    },
+    "orbiter": {
+        "type": "orbiter",
+        "color": "orange",
+        "radius": 6,
+        "behavior": {
+            "onTick": [
+                {
+                    "opcode": "orbit",
+                    "params": {
+                        "target": "player",
+                        "speed": 100,
+                        "radius": 80
+                    }
+                }
+            ]
+        }
     }
 }

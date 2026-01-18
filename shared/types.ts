@@ -9,9 +9,14 @@ export interface EntityState {
     id: string;
     type: string;
     pos: Vector2;
-    // We can add color or other visual props here
     color?: string;
     size?: number;
+    // Visual properties
+    visual?: Visual;
+    // Combat
+    health?: number;
+    maxHealth?: number;
+    // Chat
     chatMessage?: string;
     chatTimer?: number;
 }
@@ -57,6 +62,17 @@ export interface Action {
 export interface Behavior {
     onTick?: Action[];
     onSpawn?: Action[];
+    onCollision?: Action[];
+}
+
+// Visual shape definitions
+export type ShapeType = 'circle' | 'rect' | 'triangle';
+
+export interface Visual {
+    shape: ShapeType;
+    width?: number;  // For rect
+    height?: number; // For rect
+    rotation?: number; // Degrees
 }
 
 export interface EntityDef {
@@ -65,6 +81,8 @@ export interface EntityDef {
     radius: number;
     speed?: number;
     behavior?: Behavior;
+    visual?: Visual;
+    health?: number;
 }
 
 export interface ContentPack {

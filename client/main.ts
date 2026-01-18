@@ -171,18 +171,56 @@ function drawEntity(entity: EntityState) {
     ctx.save();
     ctx.translate(entity.pos.x, entity.pos.y);
 
+    // Apply rotation if specified
+    if (entity.visual?.rotation) {
+        ctx.rotate((entity.visual.rotation * Math.PI) / 180);
+    }
+
     ctx.fillStyle = entity.color || 'black';
 
-    // Draw circle
-    ctx.beginPath();
-    ctx.arc(0, 0, entity.size || 10, 0, Math.PI * 2);
-    ctx.fill();
+    // Draw shape based on visual type
+    const visual = entity.visual;
+    const size = entity.size || 10;
+
+    if (visual?.shape === 'rect') {
+        const w = visual.width || size * 2;
+        const h = visual.height || size * 2;
+        ctx.fillRect(-w / 2, -h / 2, w, h);
+    } else if (visual?.shape === 'triangle') {
+        ctx.beginPath();
+        ctx.moveTo(0, -size);
+        ctx.lineTo(-size, size);
+        ctx.lineTo(size, size);
+        ctx.closePath();
+        ctx.fill();
+    } else {
+        // Default: circle
+        ctx.beginPath();
+        ctx.arc(0, 0, size, 0, Math.PI * 2);
+        ctx.fill();
+    }
+
+    ctx.restore();
+    ctx.save();
+    ctx.translate(entity.pos.x, entity.pos.y);
+
+    // Draw health bar if entity has health
+    if (entity.health !== undefined && entity.maxHealth) {
+        const barWidth = 40;
+        const barHeight = 4;
+        const healthPercent = entity.health / entity.maxHealth;
+
+        ctx.fillStyle = '#333';
+        ctx.fillRect(-barWidth / 2, -size - 12, barWidth, barHeight);
+        ctx.fillStyle = healthPercent > 0.3 ? '#0f0' : '#f00';
+        ctx.fillRect(-barWidth / 2, -size - 12, barWidth * healthPercent, barHeight);
+    }
 
     // Draw nickname
     ctx.fillStyle = 'black';
     ctx.font = 'bold 12px sans-serif';
     ctx.textAlign = 'center';
-    ctx.fillText(entity.type, 0, -(entity.size || 10) - 8);
+    ctx.fillText(entity.type, 0, -(entity.size || 10) - 16);
 
     // Draw Chat Bubble
     if (entity.chatMessage) {
@@ -191,14 +229,12 @@ function drawEntity(entity: EntityState) {
         const padding = 8;
         const bubbleWidth = metrics.width + padding * 2;
         const bubbleHeight = 24;
-        const bubbleY = -(entity.size || 10) - 40;
+        const bubbleY = -(entity.size || 10) - 48;
 
-        // Bubble background
         ctx.fillStyle = 'white';
         ctx.strokeStyle = '#ccc';
         ctx.lineWidth = 1;
 
-        // Rounded rect for bubble
         const r = 10;
         const x = -bubbleWidth / 2;
         const y = bubbleY;
@@ -209,7 +245,7 @@ function drawEntity(entity: EntityState) {
         ctx.lineTo(x + bubbleWidth, y + bubbleHeight - r);
         ctx.quadraticCurveTo(x + bubbleWidth, y + bubbleHeight, x + bubbleWidth - r, y + bubbleHeight);
         ctx.lineTo(x + bubbleWidth / 2 + 10, y + bubbleHeight);
-        ctx.lineTo(x + bubbleWidth / 2, y + bubbleHeight + 10); // Pointy part
+        ctx.lineTo(x + bubbleWidth / 2, y + bubbleHeight + 10);
         ctx.lineTo(x + bubbleWidth / 2 - 10, y + bubbleHeight);
         ctx.lineTo(x + r, y + bubbleHeight);
         ctx.quadraticCurveTo(x, y + bubbleHeight, x, y + bubbleHeight - r);
@@ -219,7 +255,6 @@ function drawEntity(entity: EntityState) {
         ctx.fill();
         ctx.stroke();
 
-        // Chat text
         ctx.fillStyle = '#333';
         ctx.fillText(entity.chatMessage, 0, bubbleY + 16);
     }
