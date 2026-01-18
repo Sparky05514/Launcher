@@ -31,7 +31,21 @@ Press **`/`** anywhere in the game to open the **Ghost Console**.
 - `/broadcast [msg]` — Send a giant announcement to all players
 - `/help admin` — See all admin commands
 
+## ⚡ Troubleshooting Latency (High MS)
+If your `Ping` is high, follow these steps to find the bottleneck:
+
+### 1. The "Base Lag" Test (Local)
+- On the host machine, open `http://localhost:5173`.
+- Check the `Ping` display.
+- **Result**: If it's **< 5ms**, your code and PC are fine. The lag is coming from the **Tunnel**.
+
+### 2. High Performance Option (Cloudflare)
+Localtunnel servers are sometimes far away. If the lag is too high, try our **High-Performance Tunnel**:
+- Stop your current host process.
+- Run: `npm run host:fast`
+- This uses **Cloudflare Tunnel**, which is usually 2-3x faster because it uses a global "Edge" network.
+
 ## 💻 Tech Stack
 - **Frontend**: Vite + TypeScript + HTML5 Canvas
 - **Backend**: Node.js + Express + Socket.IO
-- **Hosting**: Localtunnel (for instant public URLs)
+- **Hosting**: Localtunnel (Default) / Cloudflare Tunnel (High Speed)

@@ -19,13 +19,20 @@ if [ ! -d "node_modules" ]; then
 fi
 
 echo "What would you like to do?"
-echo "1) Host a Public Match (localtunnel)"
-echo "2) Join a Server / Play Locally"
-read -p "Selection [1-2]: " CHOICE
+echo "1) Host a Public Match (localtunnel - Easier)"
+echo "2) Host a Public Match (Cloudflare - High Performance)"
+echo "3) Join a Server / Play Locally"
+read -p "Selection [1-3]: " CHOICE
 
 if [ "$CHOICE" == "1" ]; then
-    echo "[INFO] Starting Public Host..."
+    echo "[INFO] Starting Public Host (localtunnel)..."
     npm run host
+    exit 0
+fi
+
+if [ "$CHOICE" == "2" ]; then
+    echo "[INFO] Starting High-Performance Host (Cloudflare)..."
+    npm run host:fast
     exit 0
 fi
 
