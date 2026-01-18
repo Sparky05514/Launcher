@@ -13,7 +13,7 @@
     "build:prod": "npm run build",
     "start": "node dist/server/server/index.js",
     "host": "npm run build && echo '--- TUNNEL PASSWORD (YOUR IP) ---' && curl -s https://ifconfig.me && echo '\n--------------------------------' && concurrently -n server,tunnel \"npm run server\" \"npx localtunnel --port 3000\"",
-    "host:fast": "npm run build && echo '--- STARTING CLOUDFLARE TUNNEL (Lower Latency) ---' && concurrently -n server,tunnel \"npm run server\" \"npx @cloudflare/cloudflared tunnel --url http://localhost:3000\""
+    "host:fast": "npm run build && echo '--- STARTING CLOUDFLARE TUNNEL (Lower Latency) ---' && concurrently -n server,tunnel \"npm run server\" \"npx -y cloudflared tunnel --url http://localhost:3000\""
   },
   "keywords": [],
   "author": "",
