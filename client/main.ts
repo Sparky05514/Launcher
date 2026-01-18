@@ -4,12 +4,15 @@ import { GAME_CONFIG, WORLD_BOUNDS, updateBounds } from '../shared/config';
 
 // Connect to remote server if configured, otherwise default (localhost proxy)
 const serverUrl = import.meta.env.VITE_SERVER_URL;
-const socket = io(serverUrl);
+const socket = io(serverUrl, {
+    transports: ['websocket']
+});
 
 const canvas = document.getElementById('gameCanvas') as HTMLCanvasElement;
 const ctx = canvas.getContext('2d')!;
 
 let currentState: WorldState | null = null;
+let interpolatedEntities: Map<string, { x: number, y: number }> = new Map();
 let myEntityId: string | null = null;
 let hasJoined = false;
 
@@ -23,6 +26,18 @@ let serverZoom = GAME_CONFIG.SERVER_VIEW_SCALE;
 
 let myLocalPos: { x: number, y: number } | null = null;
 const entityTrails: Map<string, { x: number, y: number, timestamp: number }[]> = new Map();
+
+let ping = 0;
+let lastPingTime = 0;
+
+setInterval(() => {
+    lastPingTime = Date.now();
+    socket.emit('latency_ping');
+}, 2000);
+
+socket.on('latency_pong', () => {
+    ping = Date.now() - lastPingTime;
+});
 let serverMessage: { text: string, timestamp: number } | null = null;
 
 function resize() {
@@ -74,8 +89,23 @@ socket.on(SOCKET_EVENTS.SERVER_MESSAGE, (data: { message: string }) => {
 socket.on(SOCKET_EVENTS.WORLD_UPDATE, (state: WorldState) => {
     currentState = state;
 
-    if (myEntityId && currentState.entities[myEntityId]) {
-        const serverPos = currentState.entities[myEntityId].pos;
+    // Cleanup interpolated entities that no longer exist
+    const currentIds = new Set(Object.keys(state.entities));
+    for (const id of interpolatedEntities.keys()) {
+        if (!currentIds.has(id)) {
+            interpolatedEntities.delete(id);
+        }
+    }
+
+    // Initialize new entities in interpolator
+    Object.values(state.entities).forEach(entity => {
+        if (!interpolatedEntities.has(entity.id)) {
+            interpolatedEntities.set(entity.id, { ...entity.pos });
+        }
+    });
+
+    if (myEntityId && state.entities[myEntityId]) {
+        const serverPos = state.entities[myEntityId].pos;
         if (!myLocalPos) {
             myLocalPos = { ...serverPos };
         }
@@ -110,49 +140,7 @@ window.addEventListener('keyup', (e) => {
     }
 });
 
-// Prediction and Input Loop
-setInterval(() => {
-    if (!hasJoined) return;
-
-    // 1. Client-Side Prediction
-    if (myLocalPos && (keys.up || keys.down || keys.left || keys.right)) {
-        const deltaTime = 1000 / GAME_CONFIG.TICK_RATE;
-        const moveAmt = GAME_CONFIG.PLAYER_SPEED * (deltaTime / 1000);
-
-        if (keys.up) myLocalPos.y -= moveAmt;
-        if (keys.down) myLocalPos.y += moveAmt;
-        if (keys.left) myLocalPos.x -= moveAmt;
-        if (keys.right) myLocalPos.x += moveAmt;
-
-        // Keep in bounds
-        myLocalPos.x = Math.max(WORLD_BOUNDS.minX, Math.min(WORLD_BOUNDS.maxX, myLocalPos.x));
-        myLocalPos.y = Math.max(WORLD_BOUNDS.minY, Math.min(WORLD_BOUNDS.maxY, myLocalPos.y));
-    }
-
-    // 1.1 Simple Circle-Circle Collision (runs even if stationary)
-    if (myLocalPos && GAME_CONFIG.COLLISION_ENABLED && currentState) {
-        Object.values(currentState.entities).forEach(other => {
-            if (other.id === myEntityId) return;
-
-            const dx = myLocalPos!.x - other.pos.x;
-            const dy = myLocalPos!.y - other.pos.y;
-            const distance = Math.sqrt(dx * dx + dy * dy);
-            const minDistance = (GAME_CONFIG.PLAYER_SIZE) + (other.size || 10);
-
-            if (distance < minDistance) {
-                // Collision detected! Push us away.
-                const angle = Math.atan2(dy, dx);
-                myLocalPos!.x = other.pos.x + Math.cos(angle) * minDistance;
-                myLocalPos!.y = other.pos.y + Math.sin(angle) * minDistance;
-            }
-        });
-    }
-
-    // 2. Client Authority: Send local position to server
-    if (myLocalPos) {
-        socket.emit(SOCKET_EVENTS.PLAYER_POSITION, myLocalPos);
-    }
-}, 1000 / GAME_CONFIG.TICK_RATE);
+// Redundant prediction interval removed (logic moved to render loop)
 
 function drawEntity(entity: EntityState) {
     ctx.save();
@@ -214,7 +202,42 @@ function drawEntity(entity: EntityState) {
     ctx.restore();
 }
 
-function render() {
+let lastTime = performance.now();
+
+function render(now: number) {
+    const dt = now - lastTime;
+    lastTime = now;
+
+    // 1. Update Player Prediction (High FPS)
+    if (hasJoined && myLocalPos) {
+        if (keys.up || keys.down || keys.left || keys.right) {
+            const moveAmt = GAME_CONFIG.PLAYER_SPEED * (dt / 1000);
+            if (keys.up) myLocalPos.y -= moveAmt;
+            if (keys.down) myLocalPos.y += moveAmt;
+            if (keys.left) myLocalPos.x -= moveAmt;
+            if (keys.right) myLocalPos.x += moveAmt;
+
+            myLocalPos.x = Math.max(WORLD_BOUNDS.minX, Math.min(WORLD_BOUNDS.maxX, myLocalPos.x));
+            myLocalPos.y = Math.max(WORLD_BOUNDS.minY, Math.min(WORLD_BOUNDS.maxY, myLocalPos.y));
+        }
+
+        // Collision logic
+        if (GAME_CONFIG.COLLISION_ENABLED && currentState) {
+            Object.values(currentState.entities).forEach(other => {
+                if (other.id === myEntityId) return;
+                const dx = myLocalPos!.x - other.pos.x;
+                const dy = myLocalPos!.y - other.pos.y;
+                const dist = Math.sqrt(dx * dx + dy * dy);
+                const minDist = GAME_CONFIG.PLAYER_SIZE + (other.size || 10);
+                if (dist < minDist) {
+                    const angle = Math.atan2(dy, dx);
+                    myLocalPos!.x = other.pos.x + Math.cos(angle) * minDist;
+                    myLocalPos!.y = other.pos.y + Math.sin(angle) * minDist;
+                }
+            });
+        }
+    }
+
     ctx.save();
 
     // Apply server view scaling
@@ -250,6 +273,12 @@ function render() {
     ctx.strokeStyle = isServerView ? '#00d2ff' : '#333';
     ctx.lineWidth = 4;
     ctx.strokeRect(0, 0, GAME_CONFIG.WORLD_WIDTH, GAME_CONFIG.WORLD_HEIGHT);
+
+    // 5. Draw Ping (Top Left)
+    ctx.fillStyle = isServerView ? 'white' : 'black';
+    ctx.font = 'bold 14px Inter, sans-serif';
+    ctx.textAlign = 'left';
+    ctx.fillText(`Ping: ${ping}ms`, 20, 30);
 
     if (currentState) {
         Object.values(currentState.entities).forEach(entity => {
@@ -290,21 +319,29 @@ function render() {
             }
 
             // 2. Draw Entity
-            if (entity.id === myEntityId && myLocalPos) {
-                drawEntity({ ...entity, pos: myLocalPos });
-            } else {
-                drawEntity(entity);
+            let displayPos = entity.pos;
+            if (entity.id !== myEntityId) {
+                const interp = interpolatedEntities.get(entity.id);
+                if (interp) {
+                    // Time-based Lerp for high FPS smoothness
+                    // We want to reach the target roughly in 1 tick (100ms at 10Hz, or here ~16ms at 60Hz)
+                    // The factor 0.15 * (dt / 16.6) makes it smooth across refresh rates
+                    const lerpFactor = 1 - Math.exp(-0.015 * dt);
+                    interp.x += (entity.pos.x - interp.x) * lerpFactor;
+                    interp.y += (entity.pos.y - interp.y) * lerpFactor;
+                    displayPos = interp;
+                }
+            } else if (myLocalPos) {
+                displayPos = myLocalPos;
             }
+
+            drawEntity({ ...entity, pos: displayPos });
         });
 
         // Cleanup stale trails
         entityTrails.forEach((_, id) => {
             if (!currentState!.entities[id]) entityTrails.delete(id);
         });
-
-        ctx.fillStyle = 'black';
-        ctx.font = '12px monospace';
-        ctx.fillText(`Ping: ${Date.now() - currentState.timestamp}ms`, 10, 20);
     } else {
         ctx.fillStyle = 'black';
         ctx.fillText('Connecting...', 10, 20);
@@ -325,7 +362,16 @@ function render() {
     ctx.restore();
     requestAnimationFrame(render);
 }
-render();
+
+// Separate interval for network sync (still matches tick rate or slightly lower)
+setInterval(() => {
+    if (hasJoined && myLocalPos) {
+        socket.emit(SOCKET_EVENTS.PLAYER_POSITION, myLocalPos);
+    }
+}, 1000 / GAME_CONFIG.TICK_RATE);
+
+// Start render loop with high-precision timestamp
+requestAnimationFrame(render);
 
 const commandInput = document.getElementById('commandInput') as HTMLInputElement;
 

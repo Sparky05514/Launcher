@@ -13,7 +13,8 @@ const io = new Server(httpServer, {
     cors: {
         origin: "*",
         methods: ["GET", "POST"]
-    }
+    },
+    transports: ['websocket']
 });
 
 const world = new WorldManager();
@@ -129,6 +130,10 @@ io.on('connection', (socket) => {
                 }
             }
         }
+    });
+
+    socket.on('latency_ping', () => {
+        socket.emit('latency_pong');
     });
 });
 
