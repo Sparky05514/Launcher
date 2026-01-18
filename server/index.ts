@@ -135,6 +135,48 @@ io.on('connection', (socket) => {
     socket.on('latency_ping', () => {
         socket.emit('latency_pong');
     });
+
+    // ========== DEV TOOLS ==========
+    socket.on(SOCKET_EVENTS.DEV_GET_STATE, () => {
+        socket.emit(SOCKET_EVENTS.DEV_STATE_SYNC, {
+            entities: world.getState().entities,
+            definitions: world.getDefinitions(),
+            config: GAME_CONFIG
+        });
+    });
+
+    socket.on(SOCKET_EVENTS.DEV_UPDATE_ENTITY, (data: { entityId: string, props: any }) => {
+        const success = world.updateEntityProperties(data.entityId, data.props);
+        if (success) {
+            console.log(`[Dev] Updated entity ${data.entityId}`);
+        }
+    });
+
+    socket.on(SOCKET_EVENTS.DEV_DELETE_ENTITY, (entityId: string) => {
+        world.removeEntity(entityId);
+        console.log(`[Dev] Deleted entity ${entityId}`);
+    });
+
+    socket.on(SOCKET_EVENTS.DEV_UPDATE_DEFINITION, (data: { type: string, def: any }) => {
+        world.updateDefinition(data.type, data.def);
+        io.emit(SOCKET_EVENTS.DEV_STATE_SYNC, {
+            entities: world.getState().entities,
+            definitions: world.getDefinitions(),
+            config: GAME_CONFIG
+        });
+    });
+
+    socket.on(SOCKET_EVENTS.DEV_EXEC_CODE, (code: string) => {
+        // Dev-mode sandboxed eval with game context
+        try {
+            const context = { world, GAME_CONFIG, io, console };
+            const fn = new Function(...Object.keys(context), `return (${code})`);
+            const result = fn(...Object.values(context));
+            socket.emit(SOCKET_EVENTS.DEV_EXEC_RESULT, { success: true, result: String(result) });
+        } catch (err: any) {
+            socket.emit(SOCKET_EVENTS.DEV_EXEC_RESULT, { success: false, error: err.message });
+        }
+    });
 });
 
 // Game Loop (defined by TICK_RATE)

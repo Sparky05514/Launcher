@@ -1,6 +1,7 @@
 import { io } from 'socket.io-client';
 import { SOCKET_EVENTS, WorldState, EntityState, PlayerInput } from '../shared/types';
 import { GAME_CONFIG, WORLD_BOUNDS, updateBounds } from '../shared/config';
+import { DevPanel } from './devPanel';
 
 // Connect to remote server if configured, otherwise default (localhost proxy)
 const serverUrl = import.meta.env.VITE_SERVER_URL;
@@ -116,6 +117,30 @@ socket.on(SOCKET_EVENTS.CONFIG_SYNC, (serverConfig: any) => {
     console.log('Syncing config from server...', serverConfig);
     Object.assign(GAME_CONFIG, serverConfig);
     updateBounds();
+});
+
+// Dev Panel (Toggle with ` key)
+const devPanel = new DevPanel(socket);
+
+// Entity Click Detection for Dev Tools
+canvas.addEventListener('click', (e) => {
+    if (!currentState) return;
+
+    const rect = canvas.getBoundingClientRect();
+    const clickX = e.clientX - rect.left;
+    const clickY = e.clientY - rect.top;
+
+    // Find entity at click position
+    for (const entity of Object.values(currentState.entities)) {
+        const dx = clickX - entity.pos.x;
+        const dy = clickY - entity.pos.y;
+        const dist = Math.sqrt(dx * dx + dy * dy);
+
+        if (dist < (entity.size || 10) + 5) {
+            devPanel.selectEntity(entity.id);
+            return;
+        }
+    }
 });
 
 // WASD Input

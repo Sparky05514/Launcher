@@ -38,6 +38,14 @@ export const SOCKET_EVENTS = {
     PLAYER_POSITION: 'player_position',
     CONFIG_SYNC: 'config_sync',
     SERVER_MESSAGE: 'server_message',
+    // Dev Tools Events
+    DEV_GET_STATE: 'dev_get_state',
+    DEV_STATE_SYNC: 'dev_state_sync',
+    DEV_UPDATE_ENTITY: 'dev_update_entity',
+    DEV_DELETE_ENTITY: 'dev_delete_entity',
+    DEV_UPDATE_DEFINITION: 'dev_update_definition',
+    DEV_EXEC_CODE: 'dev_exec_code',
+    DEV_EXEC_RESULT: 'dev_exec_result',
 } as const;
 
 // Sandbox Content Schema
@@ -75,3 +83,9 @@ export interface PlayerInput {
     right: boolean;
 }
 
+// Dev Tools Types
+export interface DevState {
+    entities: Record<string, EntityState>;
+    definitions: Record<string, EntityDef>;
+    config: Record<string, any>;
+}

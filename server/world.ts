@@ -49,6 +49,31 @@ export class WorldManager {
         }
     }
 
+    public getDefinitions(): Record<string, EntityDef> {
+        const result: Record<string, EntityDef> = {};
+        this.definitions.forEach((def, key) => {
+            result[key] = def;
+        });
+        return result;
+    }
+
+    public updateEntityProperties(entityId: string, props: Partial<EntityState>): boolean {
+        const entity = this.entities.get(entityId);
+        if (!entity) return false;
+
+        if (props.pos) entity.pos = { ...props.pos };
+        if (props.color !== undefined) entity.color = props.color;
+        if (props.size !== undefined) entity.size = props.size;
+        if (props.type !== undefined) entity.type = props.type;
+
+        return true;
+    }
+
+    public updateDefinition(type: string, def: EntityDef) {
+        this.definitions.set(type, def);
+        console.log(`[Dev] Updated definition: ${type}`);
+    }
+
     public spawnEntity(type: string, pos: Vector2): string {
         const def = this.definitions.get(type);
         if (!def) {
