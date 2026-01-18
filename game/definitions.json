@@ -1,0 +1,36 @@
+{
+    "blob": {
+        "type": "blob",
+        "color": "red",
+        "radius": 15,
+        "behavior": {
+            "onTick": [
+                {
+                    "opcode": "random_walk",
+                    "params": {
+                        "speed": 100
+                    }
+                }
+            ]
+        }
+    },
+    "runner": {
+        "type": "runner",
+        "color": "cyan",
+        "radius": 10,
+        "behavior": {
+            "onTick": [
+                {
+                    "opcode": "move_dir",
+                    "params": {
+                        "speed": 200,
+                        "dir": {
+                            "x": 1,
+                            "y": 0
+                        }
+                    }
+                }
+            ]
+        }
+    }
+}

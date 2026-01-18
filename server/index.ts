@@ -4,7 +4,8 @@ import { Server } from 'socket.io';
 import { SOCKET_EVENTS, PlayerJoinData, PlayerInput } from '../shared/types';
 import { WorldManager } from './world';
 import { GAME_CONFIG } from '../shared/config';
-
+import chokidar from 'chokidar';
+import fs from 'fs';
 import path from 'path';
 
 const app = express();
@@ -191,3 +192,60 @@ const PORT = process.env.PORT || GAME_CONFIG.SERVER_PORT;
 httpServer.listen(PORT, () => {
     console.log(`Server running on http://localhost:${PORT}`);
 });
+
+// ========== HOT RELOAD FILE WATCHER ==========
+const GAME_DIR = path.join(process.cwd(), 'game');
+const CONFIG_FILE = path.join(GAME_DIR, 'config.json');
+const DEFINITIONS_FILE = path.join(GAME_DIR, 'definitions.json');
+
+function loadConfig() {
+    try {
+        if (fs.existsSync(CONFIG_FILE)) {
+            const data = JSON.parse(fs.readFileSync(CONFIG_FILE, 'utf-8'));
+            Object.assign(GAME_CONFIG, data);
+            console.log('[Hot Reload] Config updated');
+            io.emit(SOCKET_EVENTS.CONFIG_SYNC, GAME_CONFIG);
+        }
+    } catch (err) {
+        console.error('[Hot Reload] Config load error:', err);
+    }
+}
+
+function loadDefinitions() {
+    try {
+        if (fs.existsSync(DEFINITIONS_FILE)) {
+            const data = JSON.parse(fs.readFileSync(DEFINITIONS_FILE, 'utf-8'));
+            world.loadContent({ definitions: data });
+            console.log('[Hot Reload] Definitions updated');
+            // Sync to dev panels
+            io.emit(SOCKET_EVENTS.DEV_STATE_SYNC, {
+                entities: world.getState().entities,
+                definitions: world.getDefinitions(),
+                config: GAME_CONFIG
+            });
+        }
+    } catch (err) {
+        console.error('[Hot Reload] Definitions load error:', err);
+    }
+}
+
+// Initial load from files
+loadConfig();
+loadDefinitions();
+
+// Watch for changes
+const watcher = chokidar.watch(GAME_DIR, {
+    persistent: true,
+    ignoreInitial: true
+});
+
+watcher.on('change', (filePath) => {
+    console.log(`[Hot Reload] File changed: ${filePath}`);
+    if (filePath.endsWith('config.json')) {
+        loadConfig();
+    } else if (filePath.endsWith('definitions.json')) {
+        loadDefinitions();
+    }
+});
+
+console.log(`[Hot Reload] Watching ${GAME_DIR} for changes...`);

@@ -20,6 +20,7 @@
   "license": "ISC",
   "type": "commonjs",
   "dependencies": {
+    "chokidar": "^5.0.0",
     "cors": "^2.8.5",
     "express": "^5.2.1",
     "socket.io": "^4.8.3",
@@ -35,8 +36,8 @@
     "@types/socket.io": "^3.0.1",
     "@types/uuid": "^10.0.0",
     "concurrently": "^9.2.1",
+    "localtunnel": "^2.0.2",
     "nodemon": "^3.1.11",
-    "vite": "^7.3.1",
-    "localtunnel": "^2.0.2"
+    "vite": "^7.3.1"
   }
 }

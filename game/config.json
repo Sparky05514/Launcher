@@ -1,0 +1,17 @@
+{
+    "SERVER_PORT": 3000,
+    "TICK_RATE": 60,
+    "WORLD_WIDTH": 800,
+    "WORLD_HEIGHT": 600,
+    "SERVER_VIEW_SCALE": 0.5,
+    "PLAYER_SPEED": 400,
+    "PLAYER_SIZE": 30,
+    "GRID_SIZE": 50,
+    "BACKGROUND_COLOR": "#ffffff",
+    "GRID_COLOR": "#eeeeee",
+    "VOID_COLOR": "#f0f0f0",
+    "COLLISION_ENABLED": true,
+    "TRAIL_ENABLED": true,
+    "TRAIL_DURATION_MS": 300,
+    "CHAT_DURATION_SEC": 5
+}
