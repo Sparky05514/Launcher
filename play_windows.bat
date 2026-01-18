@@ -44,9 +44,14 @@ IF NOT EXIST "node_modules" (
 ECHO.
 ECHO ==========================================
 ECHO Enter the Game Server URL 
-ECHO Example: https://cool-panda.loca.lt
-ECHO NOTE: If asked for a 'Tunnel Password', use the IP 
-ECHO printed in the host's terminal.
+ECHO.
+ECHO Examples:
+ECHO   - Cloudflare: https://abc-xyz-123.trycloudflare.com
+ECHO   - Localtunnel: https://cool-panda.loca.lt
+ECHO.
+ECHO NOTE: For localtunnel, if asked for a 'Tunnel Password',
+ECHO use the IP address printed in the host's terminal.
+ECHO.
 ECHO (Leave empty to play on localhost)
 ECHO ==========================================
 ECHO.
