@@ -33,6 +33,7 @@ fi
 echo ""
 echo "Enter the Game Server URL (e.g. https://cool-panda.loca.lt)"
 echo "Leave empty to play locally (requires another terminal running 'npm run server')"
+echo "NOTE: If asked for a 'Tunnel Password', use the IP printed in your host terminal."
 echo ""
 read -p "Server URL: " SERVER_URL
 

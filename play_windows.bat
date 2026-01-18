@@ -25,6 +25,8 @@ ECHO.
 ECHO ==========================================
 ECHO Enter the Game Server URL 
 ECHO Example: https://cool-panda.loca.lt
+ECHO NOTE: If asked for a 'Tunnel Password', use the IP 
+ECHO printed in the host's terminal.
 ECHO (Leave empty to play on localhost)
 ECHO ==========================================
 ECHO.

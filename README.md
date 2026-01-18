@@ -9,7 +9,11 @@ bash play_linux.sh
 ```
 1. Select **1) Host a Public Match**.
 2. Wait for the `localtunnel` URL (e.g., `https://cool-panda.loca.lt`).
-3. **Copy this URL** and send it to your friends!
+3. **Copy the URL** AND the **Tunnel Password** (your IP) shown in the terminal!
+4. Send both to your friends.
+
+> [!NOTE]
+> The **Tunnel Password** is a security measure by Localtunnel. Players only need to enter it once to "unlock" the session in their browser.
 
 ## 🕹️ How to Play (Windows/Players)
 If you just want to join a friend's server:
