@@ -18,16 +18,26 @@ if [ ! -d "node_modules" ]; then
     npm install
 fi
 
+echo "What would you like to do?"
+echo "1) Host a Public Match (localtunnel)"
+echo "2) Join a Server / Play Locally"
+read -p "Selection [1-2]: " CHOICE
+
+if [ "$CHOICE" == "1" ]; then
+    echo "[INFO] Starting Public Host..."
+    npm run host
+    exit 0
+fi
+
 # Prompt for Server URL
 echo ""
-echo "Enter the Game Server URL (e.g. https://my-game.onrender.com)"
-echo "Leave empty to play locally (requires npm run server running locally)"
-echo "TIP: To host publicly with low latency, run 'npm run host' in another terminal"
+echo "Enter the Game Server URL (e.g. https://cool-panda.loca.lt)"
+echo "Leave empty to play locally (requires another terminal running 'npm run server')"
 echo ""
 read -p "Server URL: " SERVER_URL
 
 if [ -z "$SERVER_URL" ]; then
-    echo "[INFO] Starting in LOCAL mode..."
+    echo "[INFO] Starting Client in LOCAL mode..."
     npm run client
 else
     echo "[INFO] Connecting to $SERVER_URL..."

@@ -84,7 +84,7 @@ io.on('connection', (socket) => {
                     const activePlayerIds = new Set(playerEntities.values());
                     console.log(`[Admin] Clearing world. Keeping players: ${Array.from(activePlayerIds)}`);
                     world.clearExcept(activePlayerIds);
-                    socket.emit(SOCKET_EVENTS.SERVER_MESSAGE, { message: 'World cleared of NPCs' });
+                    io.emit(SOCKET_EVENTS.SERVER_MESSAGE, { message: '🧹 World cleared by Admin' });
                 }
 
                 if (command === '/broadcast') {

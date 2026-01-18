@@ -328,6 +328,15 @@ function render() {
 render();
 
 const commandInput = document.getElementById('commandInput') as HTMLInputElement;
+
+// Global hotkey for command input
+window.addEventListener('keydown', (e) => {
+    if (e.key === '/' && document.activeElement !== commandInput) {
+        e.preventDefault();
+        commandInput.focus();
+    }
+});
+
 commandInput.addEventListener('keydown', (e) => {
     if (e.key === 'Enter') {
         const text = commandInput.value;

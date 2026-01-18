@@ -22,14 +22,16 @@ IF NOT EXIST "node_modules" (
 
 :: Prompt for Server URL
 ECHO.
-ECHO Enter the Game Server URL (e.g. https://my-game.onrender.com)
-ECHO Leave empty to play locally (requires npm run server running locally)
-ECHO TIP: To host publicly with low latency, run 'npm run host' in another terminal
+ECHO ==========================================
+ECHO Enter the Game Server URL 
+ECHO Example: https://cool-panda.loca.lt
+ECHO (Leave empty to play on localhost)
+ECHO ==========================================
 ECHO.
 SET /P SERVER_URL="Server URL: "
 
 IF "%SERVER_URL%"=="" (
-    ECHO [INFO] Starting in LOCAL mode...
+    ECHO [INFO] Starting Client in LOCAL mode...
     call npm run client
 ) ELSE (
     ECHO [INFO] Connecting to %SERVER_URL%...
